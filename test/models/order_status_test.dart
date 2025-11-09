@@ -46,19 +46,29 @@ void main() {
           OrderStatus.preparing,
           OrderStatus.transit,
           OrderStatus.delivered,
+          OrderStatus.cancelled,
         ],
       ),
     );
   });
 
   test('statusProgress соответствует индексу статуса', () {
-    final totalStages = OrderStatus.values.length;
+    const activeStatuses = <OrderStatus>[
+      OrderStatus.placed,
+      OrderStatus.confirmed,
+      OrderStatus.preparing,
+      OrderStatus.transit,
+      OrderStatus.delivered,
+    ];
 
-    for (var i = 0; i < totalStages; i++) {
-      final status = OrderStatus.values[i];
+    for (var i = 0; i < activeStatuses.length; i++) {
+      final status = activeStatuses[i];
       final order = buildOrder(status);
-      final expectedProgress = (i + 1) / totalStages;
+      final expectedProgress = (i + 1) / activeStatuses.length;
       expect(order.statusProgress, closeTo(expectedProgress, 1e-9));
     }
+
+    final cancelledOrder = buildOrder(OrderStatus.cancelled);
+    expect(cancelledOrder.statusProgress, 0);
   });
 }

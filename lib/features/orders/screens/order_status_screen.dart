@@ -9,6 +9,7 @@ import '../../../models/order_model.dart';
 import '../../../widgets/async_value_widget.dart';
 import '../../../widgets/loading_indicator.dart';
 import '../providers/order_status_notifier.dart';
+import '../widgets/cancel_modal.dart';
 
 class OrderStatusScreen extends ConsumerStatefulWidget {
   const OrderStatusScreen({
@@ -30,10 +31,27 @@ class _OrderStatusScreenState extends ConsumerState<OrderStatusScreen> {
     final l10n = S.of(context);
     final orderValue = ref.watch(orderStatusProvider(widget.orderId));
     final fallbackOrder = _lastKnownOrder;
+    final OrderModel? currentOrder = orderValue.maybeWhen(
+      data: (order) => order,
+      orElse: () => fallbackOrder,
+    );
+    final showCancelAction = currentOrder != null;
+    final isCancelEnabled =
+        currentOrder != null && _isCancellationAllowed(currentOrder);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.orderStatusTitle),
+        actions: [
+          if (showCancelAction)
+            IconButton(
+              icon: const Icon(Icons.cancel_outlined),
+              tooltip: l10n.cancelOrder,
+              onPressed: isCancelEnabled
+                  ? () => _showCancellationSheet(currentOrder!)
+                  : null,
+            ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -75,8 +93,39 @@ class _OrderStatusScreenState extends ConsumerState<OrderStatusScreen> {
       ),
     );
   }
-}
 
+  bool _isCancellationAllowed(OrderModel order) {
+    return order.status == OrderStatus.placed ||
+        order.status == OrderStatus.confirmed;
+  }
+
+  bool _isOrderPaid(OrderModel order) =>
+      order.paymentMethod.toLowerCase() != 'cash';
+
+  Future<void> _showCancellationSheet(OrderModel order) async {
+    final isPaid = _isOrderPaid(order);
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (context) => CancelModal(
+        orderId: order.id,
+        isPaid: isPaid,
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    if (result == true) {
+      final l10n = S.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.statusCancelled),
+        ),
+      );
+    }
+  }
+}
 class _OrderStatusContent extends StatelessWidget {
   const _OrderStatusContent({
     required this.order,
@@ -206,9 +255,12 @@ class _OrderTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stages = _stages(l10n);
-    final currentIndex =
+    final stages = _stages(l10n, currentStatus);
+    var currentIndex =
         stages.indexWhere((stage) => stage.status == currentStatus);
+    if (currentIndex == -1) {
+      currentIndex = stages.isEmpty ? 0 : stages.length - 1;
+    }
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -578,7 +630,13 @@ class _OrderStage {
   final String label;
 }
 
-List<_OrderStage> _stages(S l10n) {
+List<_OrderStage> _stages(S l10n, OrderStatus currentStatus) {
+  if (currentStatus == OrderStatus.cancelled) {
+    return [
+      _OrderStage(status: OrderStatus.placed, label: l10n.statusPlaced),
+      _OrderStage(status: OrderStatus.cancelled, label: l10n.statusCancelled),
+    ];
+  }
   return [
     _OrderStage(status: OrderStatus.placed, label: l10n.statusPlaced),
     _OrderStage(status: OrderStatus.confirmed, label: l10n.statusConfirmed),
@@ -600,6 +658,8 @@ String _statusLabel(OrderStatus status, S l10n) {
       return l10n.statusTransit;
     case OrderStatus.delivered:
       return l10n.statusDelivered;
+    case OrderStatus.cancelled:
+      return l10n.statusCancelled;
   }
 }
 
