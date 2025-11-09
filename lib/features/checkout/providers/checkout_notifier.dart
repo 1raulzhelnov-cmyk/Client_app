@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/failure.dart';
 import '../../../models/address_model.dart';
@@ -25,11 +26,14 @@ class CheckoutState {
   final Failure? error;
   final String? etaLabel;
 
-  bool get hasItems => order.items.isNotEmpty;
+    bool get hasItems => order.items.isNotEmpty;
 
-  bool get hasSelectedAddress => order.address.formatted.trim().isNotEmpty;
+    bool get hasSelectedAddress => order.address.formatted.trim().isNotEmpty;
 
-  bool get canSubmit => hasItems && hasSelectedAddress && !isPlacing;
+    bool get hasCashInstructions =>
+        order.paymentMethod != 'cash' || (order.cashInstructions?.trim().isNotEmpty ?? false);
+
+    bool get canSubmit => hasItems && hasSelectedAddress && hasCashInstructions && !isPlacing;
 
   CheckoutState copyWith({
     OrderModel? order,
@@ -105,8 +109,8 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
 
   Future<Failure?> placeOrder({
     String? etaLabel,
-    required String paymentIntentId,
-    required String paymentMethodId,
+    String? paymentIntentId,
+    String? paymentMethodId,
   }) async {
     final currentState = state;
     if (!currentState.hasItems) {
@@ -119,10 +123,24 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
       state = currentState.copyWith(error: failure);
       return failure;
     }
-    if (paymentIntentId.trim().isEmpty || paymentMethodId.trim().isEmpty) {
-      const failure = Failure(message: 'Не удалось подтвердить оплату.');
+
+    final paymentMethod = currentState.order.paymentMethod;
+    final isCash = paymentMethod == 'cash';
+
+    if (isCash && !currentState.hasCashInstructions) {
+      const failure = Failure(message: 'Добавьте инструкцию для оплаты наличными.');
       state = currentState.copyWith(error: failure);
       return failure;
+    }
+
+    if (!isCash) {
+      final intentId = paymentIntentId?.trim() ?? '';
+      final methodId = paymentMethodId?.trim() ?? '';
+      if (intentId.isEmpty || methodId.isEmpty) {
+        const failure = Failure(message: 'Не удалось подтвердить оплату.');
+        state = currentState.copyWith(error: failure);
+        return failure;
+      }
     }
 
     state = currentState.copyWith(isPlacing: true, clearError: true);
@@ -130,15 +148,17 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
     final resolvedEtaLabel = etaLabel ?? currentState.etaLabel;
     final etaDate = _etaDateFromLabel(resolvedEtaLabel);
     final order = currentState.order.copyWith(
-      paymentMethod: 'card',
-      paymentIntentId: paymentIntentId,
+      paymentMethod: paymentMethod,
+      paymentIntentId: isCash ? null : paymentIntentId,
+      cashInstructions: isCash ? currentState.order.cashInstructions : null,
+      cashFee: isCash ? _calculateCashFee(currentState.order.total) : 0,
       eta: etaDate,
     );
 
     final payload = _buildPayload(
       order,
       resolvedEtaLabel,
-      paymentMethodId: paymentMethodId,
+      paymentMethodId: isCash ? null : paymentMethodId,
     );
     final apiService = ref.read(apiServiceProvider);
 
@@ -156,10 +176,12 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
           );
           return failure;
         },
-        (response) async {
+          (response) async {
           final updatedOrder = _parseOrder(response, fallback: order).copyWith(
-            paymentMethod: 'card',
-            paymentIntentId: paymentIntentId,
+              paymentMethod: paymentMethod,
+              paymentIntentId: isCash ? null : paymentIntentId,
+              cashInstructions: isCash ? currentState.order.cashInstructions : null,
+              cashFee: order.cashFee,
           );
           state = state.copyWith(
             order: updatedOrder,
@@ -188,15 +210,42 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
 
   void _updateOrderFromCart(List<CartItemModel> items) {
     final total = _calculateTotal(items);
+    final isCash = state.order.paymentMethod == 'cash';
     final updatedOrder = state.order.copyWith(
       items: items,
       total: total,
+      cashFee: isCash ? _calculateCashFee(total) : 0,
     );
     state = state.copyWith(
       order: updatedOrder,
       clearError: true,
     );
     Future<void>(() => _updateEta(items));
+  }
+
+  void setPaymentMethod(String method) {
+    final normalized = method == 'cash' ? 'cash' : 'card';
+    final isCash = normalized == 'cash';
+    final updatedOrder = state.order.copyWith(
+      paymentMethod: normalized,
+      cashFee: isCash ? _calculateCashFee(state.order.total) : 0,
+      paymentIntentId: isCash ? null : state.order.paymentIntentId,
+      cashInstructions: isCash ? state.order.cashInstructions : null,
+    );
+    state = state.copyWith(
+      order: updatedOrder,
+      clearError: true,
+    );
+  }
+
+  void updateCashInstructions(String instructions) {
+    if (state.order.paymentMethod != 'cash') {
+      return;
+    }
+    state = state.copyWith(
+      order: state.order.copyWith(cashInstructions: instructions),
+      clearError: true,
+    );
   }
 
   void _updateUser(String userId) {
@@ -295,10 +344,14 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
     );
   }
 
+  double _calculateCashFee(double total) {
+    return total * AppConstants.cashFeePercent;
+  }
+
   Map<String, dynamic> _buildPayload(
     OrderModel order,
     String? etaLabel, {
-    required String paymentMethodId,
+    String? paymentMethodId,
   }) {
     final etaString = etaLabel;
     final payload = <String, dynamic>{
@@ -314,6 +367,7 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
       'eta': etaString,
       'etaApprox': order.eta?.toIso8601String(),
       'notes': order.notes,
+      'cashInstructions': order.cashInstructions?.trim(),
     };
 
     payload.removeWhere((key, value) {

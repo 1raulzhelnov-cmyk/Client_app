@@ -7,6 +7,7 @@ import 'package:mockito/mockito.dart';
 import 'package:eazy_client_mvp/features/checkout/providers/checkout_notifier.dart';
 import 'package:eazy_client_mvp/features/checkout/providers/payment_notifier.dart';
 import 'package:eazy_client_mvp/features/checkout/widgets/payment_form.dart';
+import 'package:eazy_client_mvp/generated/l10n.dart';
 import 'package:eazy_client_mvp/models/address_model.dart';
 import 'package:eazy_client_mvp/models/cart_item_model.dart';
 import 'package:eazy_client_mvp/models/order_model.dart';
@@ -15,22 +16,22 @@ import 'package:eazy_client_mvp/services/stripe/stripe_service.dart';
 
 class MockStripeService extends Mock implements StripeService {}
 
-class _StaticCheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
-  _StaticCheckoutNotifier(this._state);
+class _FakeCheckoutNotifier extends CheckoutNotifier {
+  _FakeCheckoutNotifier(this._initialState);
 
-  final CheckoutState _state;
+  final CheckoutState _initialState;
 
   @override
-  CheckoutState build() => _state;
+  CheckoutState build() => _initialState;
 }
 
-class _StaticPaymentNotifier extends AutoDisposeNotifier<PaymentState> {
-  _StaticPaymentNotifier(this._state);
+class _FakePaymentNotifier extends PaymentNotifier {
+  _FakePaymentNotifier(this._initialState);
 
-  final PaymentState _state;
+  final PaymentState _initialState;
 
   @override
-  PaymentState build() => _state;
+  PaymentState build() => _initialState;
 }
 
 void main() {
@@ -73,11 +74,11 @@ void main() {
     return ProviderScope(
       overrides: [
         checkoutProvider.overrideWith(
-          (ref) => _StaticCheckoutNotifier(checkoutState),
+          (ref) => _FakeCheckoutNotifier(checkoutState),
         ),
         paymentProvider.overrideWith((ref) async => const <PaymentMethod>[]),
         paymentNotifierProvider.overrideWith(
-          (ref) => _StaticPaymentNotifier(paymentState),
+          (ref) => _FakePaymentNotifier(paymentState),
         ),
         stripeServiceProvider.overrideWithValue(stripeService),
       ],
@@ -95,8 +96,10 @@ void main() {
       await tester.pumpWidget(
         _buildScope(
           paymentState: paymentState,
-          child: const MaterialApp(
-            home: Scaffold(
+          child: MaterialApp(
+            localizationsDelegates: S.localizationsDelegates,
+            supportedLocales: S.supportedLocales,
+            home: const Scaffold(
               body: PaymentForm(termsAccepted: false),
             ),
           ),
@@ -123,8 +126,10 @@ void main() {
       await tester.pumpWidget(
         _buildScope(
           paymentState: paymentState,
-          child: const MaterialApp(
-            home: Scaffold(
+          child: MaterialApp(
+            localizationsDelegates: S.localizationsDelegates,
+            supportedLocales: S.supportedLocales,
+            home: const Scaffold(
               body: PaymentForm(termsAccepted: true),
             ),
           ),
@@ -134,6 +139,59 @@ void main() {
       await tester.pumpAndSettle();
 
       final button = tester.widget<ElevatedButton>(
+        find.byType(ElevatedButton),
+      );
+      expect(button.onPressed, isNotNull);
+    },
+  );
+
+  testWidgets(
+    'Cash toggle requires instructions before submitting',
+    (tester) async {
+      const paymentState = PaymentState(
+        useNewCard: true,
+        cardComplete: true,
+      );
+
+      await tester.pumpWidget(
+        _buildScope(
+          paymentState: paymentState,
+          child: MaterialApp(
+            localizationsDelegates: S.localizationsDelegates,
+            supportedLocales: S.supportedLocales,
+            home: const Scaffold(
+              body: PaymentForm(termsAccepted: true),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final formContext = tester.element(find.byType(PaymentForm));
+      final cashLabel = S.of(formContext).cashPayment;
+      final instructionsLabel = S.of(formContext).cashInstructions;
+
+      await tester.tap(find.text(cashLabel));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(TextFormField, instructionsLabel),
+        findsOneWidget,
+      );
+
+      var button = tester.widget<ElevatedButton>(
+        find.byType(ElevatedButton),
+      );
+      expect(button.onPressed, isNull);
+
+      await tester.enterText(
+        find.byType(TextFormField),
+        'Позвоните при доставке',
+      );
+      await tester.pumpAndSettle();
+
+      button = tester.widget<ElevatedButton>(
         find.byType(ElevatedButton),
       );
       expect(button.onPressed, isNotNull);
