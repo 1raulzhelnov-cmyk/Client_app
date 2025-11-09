@@ -6,9 +6,13 @@ import 'package:intl/intl.dart';
 
 import '../../../core/errors/failure.dart';
 import '../../../generated/l10n.dart';
+import '../../../models/customization_model.dart';
+import '../../../models/customization_option.dart';
 import '../../../models/product_model.dart';
 import '../../../models/venue_model.dart';
 import '../../../widgets/loading_indicator.dart';
+import '../../cart/providers/cart_notifier.dart';
+import '../../cart/widgets/customization_modal.dart';
 import '../providers/venue_detail_notifier.dart';
 import '../widgets/menu_catalog.dart';
 
@@ -40,6 +44,71 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _addProductToCart(
+    BuildContext context,
+    ProductModel product, {
+    CustomizationSelection? selection,
+  }) async {
+    final notifier = ref.read(cartUpdateNotifier.notifier);
+    final l10n = S.of(context);
+    final selectedOptions =
+        selection?.selectedOptions ?? const <CustomizationOption>[];
+    final note = selection?.instructions?.trim();
+    try {
+      await notifier.addItem(
+        product,
+        1,
+        selectedOptions,
+        note: note == null || note.isEmpty ? null : note,
+      );
+      if (!mounted) {
+        return;
+      }
+      _showSnackBar(context, '${product.name} — ${l10n.addToCart}');
+    } on Failure catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _showSnackBar(context, error.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      _showSnackBar(context, l10n.errorGeneric);
+    }
+  }
+
+  Future<void> _customizeProduct(
+    BuildContext context,
+    ProductModel product,
+  ) async {
+    final customization =
+        CustomizationModel.fromOptions(product.customizations);
+    if (!customization.hasOptions) {
+      await _addProductToCart(context, product);
+      return;
+    }
+    final selection = await showCustomizationModal(
+      context: context,
+      productName: product.name,
+      customization: customization,
+    );
+    if (!mounted || selection == null) {
+      return;
+    }
+    await _addProductToCart(context, product, selection: selection);
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    if (message.isEmpty) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final venueState = ref.watch(venueDetailProvider(widget.venueId));
@@ -57,6 +126,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
           onRefresh: () async {
             await ref.refresh(venueDetailProvider(widget.venueId).future);
           },
+          onAddToCart: (product) => _addProductToCart(context, product),
+          onCustomizeProduct: (product) =>
+              _customizeProduct(context, product),
         ),
         loading: () => const Center(child: LoadingIndicator()),
         error: (error, stackTrace) {
@@ -78,6 +150,8 @@ class _VenueDetailView extends StatelessWidget {
     required this.currentImageIndex,
     required this.onPageChanged,
     required this.onRefresh,
+    required this.onAddToCart,
+    required this.onCustomizeProduct,
   });
 
   final VenueModel venue;
@@ -85,6 +159,8 @@ class _VenueDetailView extends StatelessWidget {
   final int currentImageIndex;
   final ValueChanged<int> onPageChanged;
   final Future<void> Function() onRefresh;
+  final ValueChanged<ProductModel> onAddToCart;
+  final ValueChanged<ProductModel> onCustomizeProduct;
 
   @override
   Widget build(BuildContext context) {
@@ -335,10 +411,8 @@ class _VenueDetailView extends StatelessWidget {
                       venueId: venue.id,
                       isMenu: venue.type == VenueType.food,
                       initialProducts: initialProducts,
-                      onAddToCart: (product) =>
-                          _showAddToCart(context, product),
-                      onCustomizeProduct: (product) =>
-                          _showCustomizeProduct(context, product),
+                      onAddToCart: onAddToCart,
+                      onCustomizeProduct: onCustomizeProduct,
                     ),
                   ),
               ],
@@ -349,29 +423,6 @@ class _VenueDetailView extends StatelessWidget {
     );
   }
 
-  void _showAddToCart(BuildContext context, ProductModel product) {
-    final l10n = S.of(context);
-    _showSnackBar(
-      context,
-      '${product.name} — ${l10n.addToCart}',
-    );
-  }
-
-  void _showCustomizeProduct(BuildContext context, ProductModel product) {
-    final l10n = S.of(context);
-    _showSnackBar(
-      context,
-      '${product.name} — ${l10n.customize}',
-    );
-  }
-
-  void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-  }
 }
 
 class _VenueDetailError extends StatelessWidget {

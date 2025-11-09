@@ -19,8 +19,9 @@ class _FakeCartUpdateNotifier extends CartUpdateNotifier {
   Future<void> addItem(
     ProductModel product,
     int quantity,
-    List<CustomizationOption> selectedCustomizations,
-  ) async {}
+    List<CustomizationOption> selectedCustomizations, {
+    String? note,
+  }) async {}
 
   @override
   Future<void> updateQty(String cartItemId, int quantity) async {}

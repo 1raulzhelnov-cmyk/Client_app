@@ -113,22 +113,24 @@ class CartRepository {
     return controller.stream;
   }
 
-  Future<void> addItem({
-    required ProductModel product,
-    required int quantity,
-    List<CustomizationOption> selectedCustomizations =
-        const <CustomizationOption>[],
-  }) async {
-    if (quantity <= 0) {
-      throw const Failure(message: 'Количество должно быть больше нуля.');
+    Future<void> addItem({
+      required ProductModel product,
+      required int quantity,
+      List<CustomizationOption> selectedCustomizations =
+          const <CustomizationOption>[],
+      String? note,
+    }) async {
+      if (quantity <= 0) {
+        throw const Failure(message: 'Количество должно быть больше нуля.');
+      }
+      final item = CartItemModel(
+        product: product,
+        quantity: quantity,
+        selectedCustomizations: selectedCustomizations,
+        note: note,
+      );
+      await _firestore.addToCart(item);
     }
-    final item = CartItemModel(
-      product: product,
-      quantity: quantity,
-      selectedCustomizations: selectedCustomizations,
-    );
-    await _firestore.addToCart(item);
-  }
 
   Future<void> removeItem(String cartItemId) async {
     await _firestore.removeFromCart(cartItemId);
@@ -160,12 +162,14 @@ class CartUpdateNotifier extends Notifier<void> {
   Future<void> addItem(
     ProductModel product,
     int quantity,
-    List<CustomizationOption> selectedCustomizations,
-  ) async {
+    List<CustomizationOption> selectedCustomizations, {
+    String? note,
+  }) async {
     await _repository.addItem(
       product: product,
       quantity: quantity,
       selectedCustomizations: selectedCustomizations,
+      note: note,
     );
   }
 
