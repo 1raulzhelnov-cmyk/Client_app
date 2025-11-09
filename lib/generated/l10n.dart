@@ -109,9 +109,13 @@ class S {
   // Profile
   String get profileTitle => _t('profileTitle');
   String get editProfileTitle => _t('editProfileTitle');
+  String get editProfileButton => _t('editProfileButton');
+  String get viewProfileButton => _t('viewProfileButton');
   String get fullNameField => _t('fullNameField');
   String get saveChanges => _t('saveChanges');
   String get changePhoto => _t('changePhoto');
+  String get photoSourceGallery => _t('photoSourceGallery');
+  String get photoSourceCamera => _t('photoSourceCamera');
   String get deleteAccount => _t('deleteAccount');
   String get accountUpdated => _t('accountUpdated');
   String get photoUpdated => _t('photoUpdated');
@@ -277,9 +281,13 @@ const Map<String, String> _ruValues = <String, String>{
   'passwordMismatch': 'Пароли не совпадают',
   'profileTitle': 'Профиль',
   'editProfileTitle': 'Редактирование профиля',
+  'editProfileButton': 'Редактировать',
+  'viewProfileButton': 'Перейти в профиль',
   'fullNameField': 'Полное имя',
   'saveChanges': 'Сохранить изменения',
   'changePhoto': 'Изменить фото',
+  'photoSourceGallery': 'Галерея',
+  'photoSourceCamera': 'Камера',
   'deleteAccount': 'Удалить аккаунт',
   'accountUpdated': 'Профиль обновлен',
   'photoUpdated': 'Фото обновлено',
@@ -415,9 +423,13 @@ const Map<String, String> _enValues = <String, String>{
   'passwordMismatch': 'Passwords do not match',
   'profileTitle': 'Profile',
   'editProfileTitle': 'Edit profile',
+  'editProfileButton': 'Edit',
+  'viewProfileButton': 'Go to profile',
   'fullNameField': 'Full name',
   'saveChanges': 'Save changes',
   'changePhoto': 'Change photo',
+  'photoSourceGallery': 'Gallery',
+  'photoSourceCamera': 'Camera',
   'deleteAccount': 'Delete account',
   'accountUpdated': 'Profile updated',
   'photoUpdated': 'Photo updated',

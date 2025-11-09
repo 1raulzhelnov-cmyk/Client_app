@@ -19,6 +19,8 @@ import 'features/auth/screens/home_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/otp_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/profile/screens/edit_profile_screen.dart';
+import 'features/profile/screens/profile_screen.dart';
 import 'widgets/loading_indicator.dart';
 
 Future<void> main() async {
@@ -98,6 +100,14 @@ class EazyApp extends ConsumerWidget {
         GoRoute(
           path: '/home',
           builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/profile/edit',
+          builder: (context, state) => const EditProfileScreen(),
         ),
       ],
       redirect: (context, state) {

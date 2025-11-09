@@ -68,4 +68,15 @@ class Validators {
     }
     return null;
   }
+
+  static String? optionalPhone(String? value, S l10n) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    final regex = RegExp(r'^\+?[0-9]{10,15}$');
+    if (!regex.hasMatch(value.trim())) {
+      return l10n.invalidPhone;
+    }
+    return null;
+  }
 }

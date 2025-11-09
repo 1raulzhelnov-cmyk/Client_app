@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../generated/l10n.dart';
@@ -30,24 +31,34 @@ class HomeScreen extends ConsumerWidget {
                 size: 64,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(height: 16),
-              Text(
-                user?.name ?? '—',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                user?.email ?? '',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              if (user?.phone != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 16),
                 Text(
-                  user!.phone!,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  user?.name ?? '—',
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-              ],
-              const SizedBox(height: 32),
+                const SizedBox(height: 8),
+                Text(
+                  user?.email ?? '',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                if (user?.phone != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    user!.phone!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+                const SizedBox(height: 32),
+                AppButton(
+                  label: l10n.viewProfileButton,
+                  onPressed: () {
+                    if (!context.mounted) {
+                      return;
+                    }
+                    context.push('/profile');
+                  },
+                ),
+                const SizedBox(height: 16),
               AppButton(
                 label: l10n.logoutButton,
                 isLoading: isLoading,
