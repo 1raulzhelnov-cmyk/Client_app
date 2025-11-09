@@ -4,6 +4,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/failure.dart';
 import '../../../generated/l10n.dart';
 import '../../../widgets/app_button.dart';
@@ -27,18 +28,39 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
   static const String _newCardValue = '__new_card__';
 
   late final CardFormEditController _cardController;
+    late final TextEditingController _cashController;
+    bool _suppressCashListener = false;
 
   @override
   void initState() {
     super.initState();
     _cardController = CardFormEditController();
     _cardController.addListener(_onCardChanged);
+    final initialCash = ref.read(checkoutProvider).order.cashInstructions ?? '';
+    _cashController = TextEditingController(text: initialCash);
+    _cashController.addListener(_onCashChanged);
+    ref.listen<CheckoutState>(
+      checkoutProvider,
+      (previous, next) {
+        final instructions = next.order.cashInstructions ?? '';
+        if (instructions == _cashController.text) {
+          return;
+        }
+        _suppressCashListener = true;
+        _cashController
+          ..text = instructions
+          ..selection = TextSelection.collapsed(offset: instructions.length);
+        _suppressCashListener = false;
+      },
+    );
   }
 
   @override
   void dispose() {
     _cardController.removeListener(_onCardChanged);
     _cardController.dispose();
+    _cashController.removeListener(_onCashChanged);
+    _cashController.dispose();
     super.dispose();
   }
 
@@ -49,6 +71,17 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
         .updateCardComplete(details?.complete ?? false);
   }
 
+  void _onCashChanged() {
+    if (_suppressCashListener) {
+      return;
+    }
+    final checkout = ref.read(checkoutProvider);
+    if (checkout.order.paymentMethod != 'cash') {
+      return;
+    }
+    ref.read(checkoutProvider.notifier).updateCashInstructions(_cashController.text);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = S.of(context);
@@ -56,13 +89,17 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
     final paymentState = ref.watch(paymentNotifierProvider);
     final methodsAsync = ref.watch(paymentProvider);
     final checkoutState = ref.watch(checkoutProvider);
-    final total = checkoutState.order.grandTotal;
+    final order = checkoutState.order;
+    final total = order.grandTotal;
+    final cashFee = order.cashFee;
+    final isCash = order.paymentMethod == 'cash';
     final methods = methodsAsync.maybeWhen<List<PaymentMethod>>(
       data: (data) => data,
       orElse: () => const <PaymentMethod>[],
     );
 
-    if (methods.isNotEmpty &&
+    if (!isCash &&
+        methods.isNotEmpty &&
         paymentState.selectedMethodId == null &&
         paymentState.useNewCard) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -79,6 +116,11 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
         : paymentState.selectedMethodId ?? _newCardValue;
     final amountLabel = '${total.toStringAsFixed(0)} ${l10n.currencyRub}';
     final showNewCardRadio = methods.isNotEmpty;
+    final toggleSelection = <bool>[!isCash, isCash];
+    final canSubmit = widget.termsAccepted &&
+        checkoutState.canSubmit &&
+        !isBusy &&
+        (isCash || paymentState.canSubmit);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -93,15 +135,35 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
             ),
           ),
           const SizedBox(height: 12),
-          methodsAsync.when(
-            data: (_) => const SizedBox.shrink(),
-            loading: () => const LinearProgressIndicator(minHeight: 2),
-            error: (error, __) => _ErrorBanner(
-              message: error is Failure ? error.message : error.toString(),
-              onRetry: () => ref.invalidate(paymentProvider),
-            ),
+          ToggleButtons(
+            isSelected: toggleSelection,
+            onPressed: isBusy
+                ? null
+                : (index) => _onPaymentMethodToggle(index == 1),
+            borderRadius: BorderRadius.circular(12),
+            constraints: const BoxConstraints(minHeight: 40, minWidth: 0),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(l10n.cardPayment),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(l10n.cashPayment),
+              ),
+            ],
           ),
-          if (methods.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          if (!isCash)
+            methodsAsync.when(
+              data: (_) => const SizedBox.shrink(),
+              loading: () => const LinearProgressIndicator(minHeight: 2),
+              error: (error, __) => _ErrorBanner(
+                message: error is Failure ? error.message : error.toString(),
+                onRetry: () => ref.invalidate(paymentProvider),
+              ),
+            ),
+          if (!isCash && methods.isNotEmpty) ...[
             ...methods.map(
               (method) => RadioListTile<String>(
                 value: method.id,
@@ -124,7 +186,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
             ),
             const SizedBox(height: 8),
           ],
-          if (showNewCardRadio)
+          if (!isCash && showNewCardRadio)
             RadioListTile<String>(
               value: _newCardValue,
               groupValue: groupValue,
@@ -135,7 +197,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
                     },
               title: Text(l10n.newCardLabel),
             ),
-          if (!showNewCardRadio || paymentState.useNewCard) ...[
+          if (!isCash && (!showNewCardRadio || paymentState.useNewCard)) ...[
             const SizedBox(height: 12),
             CardFormField(
               controller: _cardController,
@@ -162,7 +224,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
               controlAffinity: ListTileControlAffinity.leading,
             ),
           ],
-          if (paymentState.error != null) ...[
+          if (!isCash && paymentState.error != null) ...[
             const SizedBox(height: 8),
             Text(
               paymentState.error!.message,
@@ -171,27 +233,71 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
               ),
             ),
           ],
+          if (isCash) ...[
+            TextFormField(
+              controller: _cashController,
+              enabled: !isBusy,
+              minLines: 2,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l10n.cashInstructions,
+                hintText: l10n.cashInstructions,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              validator: (value) {
+                if (ref.read(checkoutProvider).order.paymentMethod != 'cash') {
+                  return null;
+                }
+                if (value == null || value.trim().isEmpty) {
+                  return l10n.requiredField;
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${l10n.cashFeeApplied}: +${(AppConstants.cashFeePercent * 100).toStringAsFixed(0)}% '
+              '(${cashFee.toStringAsFixed(0)} ${l10n.currencyRub})',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           AppButton(
-            label: l10n.payNow(amountLabel),
+            label: isCash ? l10n.placeOrder : l10n.payNow(amountLabel),
             isLoading: isBusy,
-            onPressed: (!widget.termsAccepted || !paymentState.canSubmit || !checkoutState.canSubmit)
-                ? null
-                : () => _onPay(methods, total, l10n),
+            onPressed: canSubmit
+                ? () => _onSubmit(
+                      isCash: isCash,
+                      methods: methods,
+                      amount: total,
+                      l10n: l10n,
+                    )
+                : null,
           ),
         ],
       ),
     );
   }
 
-  Future<void> _onPay(
-    List<PaymentMethod> methods,
-    double amount,
-    S l10n,
-  ) async {
+  Future<void> _onSubmit({
+    required bool isCash,
+    required List<PaymentMethod> methods,
+    required double amount,
+    required S l10n,
+  }) async {
     final context = this.context;
     if (!widget.termsAccepted) {
       _showMessage(l10n.acceptTermsBeforePaying);
+      return;
+    }
+
+    final formState = Form.of(context);
+    if (formState != null && !formState.validate()) {
+      _showMessage(l10n.checkoutIncomplete);
       return;
     }
 
@@ -201,6 +307,38 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
       return;
     }
 
+    if (isCash) {
+      final failure = await ref.read(checkoutProvider.notifier).placeOrder(
+            etaLabel: checkoutState.etaLabel,
+          );
+      if (failure != null) {
+        _showMessage(failure.message);
+        return;
+      }
+      if (!context.mounted) {
+        return;
+      }
+      _showMessage(l10n.orderPlaced);
+      ref.read(navProvider.notifier).state = 2;
+      context.go('/');
+      return;
+    }
+
+    await _handleCardPayment(
+      methods: methods,
+      amount: amount,
+      l10n: l10n,
+      checkoutState: checkoutState,
+    );
+  }
+
+  Future<void> _handleCardPayment({
+    required List<PaymentMethod> methods,
+    required double amount,
+    required S l10n,
+    required CheckoutState checkoutState,
+  }) async {
+    final context = this.context;
     final paymentState = ref.read(paymentNotifierProvider);
     final notifier = ref.read(paymentNotifierProvider.notifier);
     notifier.clearError();
@@ -246,6 +384,15 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
     _showMessage(l10n.orderPlaced);
     ref.read(navProvider.notifier).state = 2;
     context.go('/');
+  }
+
+  void _onPaymentMethodToggle(bool selectCash) {
+    final checkoutNotifier = ref.read(checkoutProvider.notifier);
+    checkoutNotifier.setPaymentMethod(selectCash ? 'cash' : 'card');
+    if (selectCash) {
+      checkoutNotifier.updateCashInstructions(_cashController.text);
+    }
+    ref.read(paymentNotifierProvider.notifier).clearError();
   }
 
   void _showMessage(String message) {

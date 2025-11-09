@@ -81,10 +81,11 @@ class CheckoutScreen extends HookConsumerWidget {
       },
     );
 
-    final items = checkoutState.order.items;
-    final total = checkoutState.order.total +
-        checkoutState.order.deliveryFee +
-        checkoutState.order.cashFee;
+      final items = checkoutState.order.items;
+      final subtotal = checkoutState.order.total;
+      final deliveryFee = checkoutState.order.deliveryFee;
+      final cashFee = checkoutState.order.cashFee;
+      final grandTotal = checkoutState.order.grandTotal;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.checkoutTitle),
@@ -165,9 +166,10 @@ class CheckoutScreen extends HookConsumerWidget {
                       _OrderSummaryList(items: items),
                       const SizedBox(height: 16),
                       _SummaryTotals(
-                        total: total,
-                        deliveryFee: checkoutState.order.deliveryFee,
-                        cashFee: checkoutState.order.cashFee,
+                        subtotal: subtotal,
+                        deliveryFee: deliveryFee,
+                        cashFee: cashFee,
+                        grandTotal: grandTotal,
                         l10n: l10n,
                       ),
                       const SizedBox(height: 24),
@@ -271,39 +273,65 @@ class _OrderSummaryList extends StatelessWidget {
   }
 }
 
-class _SummaryTotals extends StatelessWidget {
-  const _SummaryTotals({
-    required this.total,
-    required this.l10n,
-  });
+  class _SummaryTotals extends StatelessWidget {
+    const _SummaryTotals({
+      required this.subtotal,
+      required this.deliveryFee,
+      required this.cashFee,
+      required this.grandTotal,
+      required this.l10n,
+    });
 
-  final double total;
-  final S l10n;
+    final double subtotal;
+    final double deliveryFee;
+    final double cashFee;
+    final double grandTotal;
+    final S l10n;
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _SummaryRow(
-              label: l10n.total,
-              value: '${total.toStringAsFixed(0)} руб.',
-              isEmphasised: true,
-            ),
-          ],
+    @override
+    Widget build(BuildContext context) {
+      final theme = Theme.of(context);
+      String formatAmount(double value) => '${value.toStringAsFixed(0)} ${l10n.currencyRub}';
+      return Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: theme.colorScheme.outlineVariant),
         ),
-      ),
-    );
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SummaryRow(
+                label: l10n.itemsLabel,
+                value: formatAmount(subtotal),
+              ),
+              if (deliveryFee > 0) ...[
+                const SizedBox(height: 8),
+                _SummaryRow(
+                  label: l10n.deliveryFeeLabel,
+                  value: formatAmount(deliveryFee),
+                ),
+              ],
+              if (cashFee > 0) ...[
+                const SizedBox(height: 8),
+                _SummaryRow(
+                  label: l10n.cashFeeApplied,
+                  value: formatAmount(cashFee),
+                ),
+              ],
+              const SizedBox(height: 12),
+              _SummaryRow(
+                label: l10n.total,
+                value: formatAmount(grandTotal),
+                isEmphasised: true,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
-}
 
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({

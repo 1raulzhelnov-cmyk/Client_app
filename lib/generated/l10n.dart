@@ -233,6 +233,7 @@ class S {
     String get checkoutIncomplete => _t('checkoutIncomplete');
     String get selectPaymentMethod => _t('selectPaymentMethod');
   String get cashInstructions => _t('cashInstructions');
+  String get deliveryFeeLabel => _t('deliveryFeeLabel');
   String get cashFeeApplied => _t('cashFeeApplied');
   String get orderPlaced => _t('orderPlaced');
 
@@ -427,6 +428,7 @@ const Map<String, String> _ruValues = <String, String>{
   'checkoutIncomplete': 'Проверьте адрес и содержимое заказа.',
   'selectPaymentMethod': 'Выберите способ оплаты.',
   'cashInstructions': 'Инструкции для оплаты наличными',
+  'deliveryFeeLabel': 'Доставка',
   'cashFeeApplied': 'Дополнительная комиссия за наличные',
   'orderPlaced': 'Заказ оформлен',
   'orderStatusTitle': 'Статус заказа',
@@ -603,6 +605,7 @@ const Map<String, String> _enValues = <String, String>{
   'checkoutIncomplete': 'Check your address and order details before paying.',
   'selectPaymentMethod': 'Select a payment method.',
   'cashInstructions': 'Instructions for cash payment',
+  'deliveryFeeLabel': 'Delivery',
   'cashFeeApplied': 'Additional cash handling fee',
   'orderPlaced': 'Order placed',
   'orderStatusTitle': 'Order status',
