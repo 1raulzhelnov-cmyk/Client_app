@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:eazy_client_mvp/features/auth/providers/auth_notifier.dart';
 import 'package:eazy_client_mvp/features/home/providers/home_providers.dart';
 import 'package:eazy_client_mvp/features/home/screens/home_screen.dart';
+import 'package:eazy_client_mvp/features/orders/screens/orders_history_screen.dart';
 import 'package:eazy_client_mvp/generated/l10n.dart';
 import 'package:eazy_client_mvp/models/user_model.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,14 @@ class _StaticAuthNotifier extends AuthNotifier {
   @override
   Future<void> logout() async {
     state = const AsyncData(null);
+  }
+}
+
+class _LoadingAuthNotifier extends AuthNotifier {
+  @override
+  Future<UserModel?> build() async {
+    state = const AsyncLoading();
+    return null;
   }
 }
 
@@ -92,6 +101,62 @@ void main() {
         find.byType(BottomNavigationBar),
       );
       expect(navBarAfterProfile.currentIndex, 3);
+    });
+
+    testWidgets('показывает LinearProgressIndicator при загрузке auth',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            homeRepositoryProvider
+                .overrideWithValue(const HomeRepository(delay: Duration.zero)),
+            authNotifierProvider.overrideWith(_LoadingAuthNotifier.new),
+          ],
+          child: MaterialApp(
+            locale: const Locale('ru'),
+            supportedLocales: S.supportedLocales,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('IndexedStack показывает нужную вкладку по умолчанию',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            navProvider.overrideWith((ref) => StateController(2)),
+            homeRepositoryProvider
+                .overrideWithValue(const HomeRepository(delay: Duration.zero)),
+            authNotifierProvider.overrideWith(() => _StaticAuthNotifier(user)),
+          ],
+          child: MaterialApp(
+            locale: const Locale('ru'),
+            supportedLocales: S.supportedLocales,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OrdersHistoryScreen), findsOneWidget);
     });
   });
 }

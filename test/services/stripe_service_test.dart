@@ -68,5 +68,38 @@ void main() {
         ).called(1);
       },
     );
+
+    test('createIntent бросает Failure при пустом ответе API', () async {
+      when(
+        apiService.post<Map<String, dynamic>>(
+          any,
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => right(<String, dynamic>{}));
+
+      expect(
+        () => service.createIntent(amount: 10),
+        throwsA(isA<Failure>()),
+      );
+    });
+
+    test('confirmPayment требует clientSecret', () async {
+      final intent = PaymentIntent(
+        id: 'pi_123',
+        clientSecret: null,
+        amount: 1000,
+        created: 0,
+        currency: 'rub',
+        livemode: false,
+        status: PaymentIntentsStatus.RequiresPaymentMethod,
+      );
+      final method = MockPaymentMethod();
+      when(method.id).thenReturn('pm_123');
+
+      expect(
+        () => service.confirmPayment(intent: intent, method: method),
+        throwsA(isA<Failure>()),
+      );
+    });
   });
 }
