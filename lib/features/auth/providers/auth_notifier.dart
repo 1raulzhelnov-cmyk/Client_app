@@ -46,6 +46,24 @@ class AuthNotifier extends AutoDisposeAsyncNotifier<UserModel?> {
     );
   }
 
+  Future<void> googleSignIn() async {
+    state = const AsyncLoading();
+    final result = await ref.read(authServiceProvider).googleSignIn();
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (user) => AsyncData(user),
+    );
+  }
+
+  Future<void> appleSignIn() async {
+    state = const AsyncLoading();
+    final result = await ref.read(authServiceProvider).appleSignIn();
+    state = result.fold(
+      (failure) => AsyncError(failure, StackTrace.current),
+      (user) => AsyncData(user),
+    );
+  }
+
   Future<OtpVerificationResult?> sendOtp(
     String phone, {
     bool forceResend = false,
