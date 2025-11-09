@@ -11,7 +11,6 @@ enum OrderStatus {
   preparing,
   transit,
   delivered,
-  cancelled,
 }
 
 @JsonSerializable(explicitToJson: true)
@@ -51,6 +50,8 @@ class OrderModel {
   final String? notes;
 
   double get grandTotal => total + deliveryFee + cashFee;
+
+  double get statusProgress => (status.index + 1) / OrderStatus.values.length;
 
   OrderModel copyWith({
     String? id,
@@ -101,12 +102,12 @@ class OrderModel {
       userId: userId,
       items: fromCart,
       total: total,
-        address: const AddressModel(
-          id: '',
-          formatted: '',
-          lat: 0,
-          lng: 0,
-        ),
+      address: const AddressModel(
+        id: '',
+        formatted: '',
+        lat: 0,
+        lng: 0,
+      ),
       status: OrderStatus.placed,
       createdAt: DateTime.now(),
     );

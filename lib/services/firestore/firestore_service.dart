@@ -7,6 +7,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../../core/errors/failure.dart';
 import '../../models/cart_item_model.dart';
 import '../../models/customization_option.dart';
+import '../../models/order_model.dart';
 import '../../models/product_model.dart';
 
 class FirestoreService {
@@ -28,6 +29,8 @@ class FirestoreService {
       _firestore.collection('users');
   CollectionReference<Map<String, dynamic>> _cartCollection(String uid) =>
       _usersCollection.doc(uid).collection('cart');
+  CollectionReference<Map<String, dynamic>> get _ordersCollection =>
+      _firestore.collection('orders');
 
   Future<Map<String, dynamic>?> getUserDoc(String uid) async {
     try {
@@ -115,6 +118,37 @@ class FirestoreService {
     return collection.snapshots().map(
       (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
     );
+  }
+
+  Stream<OrderModel> getOrderStream(String orderId) {
+    final normalizedId = orderId.trim();
+    if (normalizedId.isEmpty) {
+      return Stream<OrderModel>.error(
+        const Failure(message: 'Идентификатор заказа не указан.'),
+      );
+    }
+
+    final docRef = _ordersCollection.doc(normalizedId);
+    return docRef.snapshots().map((snapshot) {
+      if (!snapshot.exists) {
+        throw const Failure(message: 'Заказ не найден.');
+      }
+      final data = snapshot.data();
+      if (data == null) {
+        throw const Failure(message: 'Данные заказа недоступны.');
+      }
+      final json = Map<String, dynamic>.from(data);
+      json['id'] = snapshot.id;
+      return OrderModel.fromJson(json);
+    }).handleError((error, stackTrace) {
+      if (error is FirebaseException) {
+        throw Failure(
+          message: error.message ?? 'Не удалось получить статус заказа.',
+          code: error.code,
+        );
+      }
+      throw error;
+    });
   }
 
   Future<void> addToCart(CartItemModel item) async {
