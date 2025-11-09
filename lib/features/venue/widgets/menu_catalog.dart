@@ -75,19 +75,17 @@ class _MenuCatalogState extends ConsumerState<MenuCatalog> {
       return;
     }
 
-    if (product.customizations.isNotEmpty &&
-        widget.onCustomizeProduct != null) {
-      widget.onCustomizeProduct!(product);
+    if (product.customizations.isNotEmpty) {
+      if (widget.onCustomizeProduct != null) {
+        widget.onCustomizeProduct!(product);
+      } else {
+        _showMessage(S.of(context).customize);
+      }
       return;
     }
 
     if (widget.onAddToCart != null) {
       widget.onAddToCart!(product);
-      return;
-    }
-
-    if (product.customizations.isNotEmpty) {
-      _showMessage(S.of(context).customize);
       return;
     }
 

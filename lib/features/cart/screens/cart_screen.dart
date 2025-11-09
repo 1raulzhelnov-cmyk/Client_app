@@ -193,6 +193,8 @@ class CartItemTile extends StatelessWidget {
     final product = item.product;
     final customizations = item.selectedCustomizations;
     final hasCustomizations = customizations.isNotEmpty;
+    final note = item.note;
+    final hasNote = note != null && note.trim().isNotEmpty;
 
     return Material(
       borderRadius: BorderRadius.circular(16),
@@ -258,6 +260,16 @@ class CartItemTile extends StatelessWidget {
                             if (hasCustomizations) ...[
                               const SizedBox(height: 6),
                               _CustomizationChips(options: customizations),
+                            ],
+                            if (hasNote) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                note!,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.7),
+                                ),
+                              ),
                             ],
                           ],
                         ),
