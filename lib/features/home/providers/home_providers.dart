@@ -13,11 +13,6 @@ final homeRepositoryProvider = Provider<HomeRepository>((ref) {
   return const HomeRepository();
 });
 
-final venueListProvider =
-    FutureProvider.autoDispose.family<List<VenueModel>, String>((ref, type) {
-  return ref.watch(homeRepositoryProvider).fetchVenues(type);
-});
-
 final flowerCatalogProvider =
     FutureProvider.autoDispose<List<FlowerModel>>((ref) {
   return ref.watch(homeRepositoryProvider).fetchFlowers();
