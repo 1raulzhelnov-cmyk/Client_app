@@ -166,11 +166,49 @@
     "cancellationReasonWrongAddress": "Неверно указан адрес",
     "confirmCancellation": "Подтвердить отмену",
     "refundInfo": "Возврат в течение 24 часов, если заказ ещё не в пути.",
+  "reviewModalTitle": "Оцените заказ",
+  "reviewModalTitleWithName": "Оцените заказ из {venueName}",
+  "@reviewModalTitleWithName": {
+    "placeholders": {
+      "venueName": {}
+    }
+  },
+  "reviewModalSubtitle": "Поделитесь впечатлением — это поможет другим.",
+  "reviewModalRatingLabel": "Ваша оценка",
+  "reviewModalTextLabel": "Комментарий",
+  "reviewModalTextHint": "Расскажите, что понравилось или что можно улучшить",
+  "reviewModalPhotosLabel": "Фото ({current}/{maximum})",
+  "@reviewModalPhotosLabel": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "maximum": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewModalAddPhotos": "Добавить фото",
+  "reviewModalSubmit": "Отправить отзыв",
+  "reviewModalImagePickError": "Не удалось выбрать изображения. Попробуйте снова.",
+  "reviewModalValidationRating": "Пожалуйста, поставьте оценку.",
+  "reviewModalSuccess": "Спасибо! Отзыв отправлен.",
+  "reviewModalRemovePhotoTooltip": "Удалить фото",
   "rateOrder": "Оценить заказ",
   "leaveReview": "Оставить отзыв",
   "submitReview": "Отправить отзыв",
   "addPhotos": "Добавить фото",
   "reviewThanks": "Спасибо за отзыв!",
+  "reviewsCountLabel": "{count, plural, =1 {# отзыв} few {# отзыва} many {# отзывов} other {# отзывов}}",
+  "@reviewsCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewsEmpty": "Отзывов пока нет",
+  "reviewsAnonymous": "Гость",
   "statusPlaced": "Создан",
   "statusConfirmed": "Подтверждён",
   "statusPreparing": "Готовится",

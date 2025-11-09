@@ -10,6 +10,7 @@ import '../../../widgets/async_value_widget.dart';
 import '../../../widgets/loading_indicator.dart';
 import '../providers/order_status_notifier.dart';
 import '../widgets/cancel_modal.dart';
+import '../widgets/rating_modal.dart';
 
 class OrderStatusScreen extends ConsumerStatefulWidget {
   const OrderStatusScreen({
@@ -25,6 +26,7 @@ class OrderStatusScreen extends ConsumerStatefulWidget {
 
 class _OrderStatusScreenState extends ConsumerState<OrderStatusScreen> {
   OrderModel? _lastKnownOrder;
+  bool _reviewPromptShown = false;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,22 @@ class _OrderStatusScreenState extends ConsumerState<OrderStatusScreen> {
     final showCancelAction = currentOrder != null;
     final isCancelEnabled =
         currentOrder != null && _isCancellationAllowed(currentOrder);
+
+      if (_shouldPromptReview(currentOrder)) {
+        final order = currentOrder!;
+        final venueId = _extractVenueId(order);
+        final venueName = _extractVenueName(order);
+        if (venueId != null && venueId.isNotEmpty) {
+          _reviewPromptShown = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showRatingSheet(
+              orderId: order.id,
+              venueId: venueId,
+              venueName: venueName,
+            );
+          });
+        }
+      }
 
     return Scaffold(
       appBar: AppBar(
@@ -102,30 +120,82 @@ class _OrderStatusScreenState extends ConsumerState<OrderStatusScreen> {
   bool _isOrderPaid(OrderModel order) =>
       order.paymentMethod.toLowerCase() != 'cash';
 
-  Future<void> _showCancellationSheet(OrderModel order) async {
-    final isPaid = _isOrderPaid(order);
+    Future<void> _showCancellationSheet(OrderModel order) async {
+      final isPaid = _isOrderPaid(order);
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        useSafeArea: true,
+        isScrollControlled: true,
+        builder: (context) => CancelModal(
+          orderId: order.id,
+          isPaid: isPaid,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      if (result == true) {
+        final l10n = S.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.statusCancelled),
+          ),
+        );
+      }
+    }
+
+  bool _shouldPromptReview(OrderModel? order) {
+    if (order == null) {
+      return false;
+    }
+    if (_reviewPromptShown) {
+      return false;
+    }
+    if (order.status != OrderStatus.delivered) {
+      return false;
+    }
+    final venueId = _extractVenueId(order);
+    return venueId != null && venueId.isNotEmpty;
+  }
+
+  Future<void> _showRatingSheet({
+    required String orderId,
+    required String venueId,
+    String? venueName,
+  }) async {
     final result = await showModalBottomSheet<bool>(
       context: context,
       useSafeArea: true,
       isScrollControlled: true,
-      builder: (context) => CancelModal(
-        orderId: order.id,
-        isPaid: isPaid,
+      builder: (context) => RatingModal(
+        orderId: orderId,
+        venueId: venueId,
+        venueName: venueName,
       ),
     );
     if (!mounted) {
       return;
     }
     if (result == true) {
-      final l10n = S.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.statusCancelled),
-        ),
-      );
+      _reviewPromptShown = true;
     }
   }
+
+  String? _extractVenueId(OrderModel order) {
+    if (order.items.isEmpty) {
+      return null;
+    }
+    return order.items.first.product.venueId;
+  }
+
+  String? _extractVenueName(OrderModel order) {
+    if (order.items.isEmpty) {
+      return null;
+    }
+    return order.items.first.product.name;
+  }
 }
+
 class _OrderStatusContent extends StatelessWidget {
   const _OrderStatusContent({
     required this.order,

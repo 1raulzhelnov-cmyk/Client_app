@@ -9,12 +9,14 @@ import '../../../generated/l10n.dart';
 import '../../../models/customization_model.dart';
 import '../../../models/customization_option.dart';
 import '../../../models/product_model.dart';
+import '../../../models/review_model.dart';
 import '../../../models/venue_model.dart';
 import '../../../widgets/loading_indicator.dart';
 import '../../cart/providers/cart_notifier.dart';
 import '../../cart/widgets/customization_modal.dart';
 import '../providers/venue_detail_notifier.dart';
 import '../widgets/menu_catalog.dart';
+import '../../orders/providers/review_notifier.dart';
 
 class VenueDetailScreen extends ConsumerStatefulWidget {
   const VenueDetailScreen({
@@ -143,7 +145,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   }
 }
 
-class _VenueDetailView extends StatelessWidget {
+class _VenueDetailView extends ConsumerWidget {
   const _VenueDetailView({
     required this.venue,
     required this.pageController,
@@ -163,13 +165,31 @@ class _VenueDetailView extends StatelessWidget {
   final ValueChanged<ProductModel> onCustomizeProduct;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = S.of(context);
     final images = venue.photos.isEmpty
         ? const <String>[]
         : List<String>.from(venue.photos);
+    final reviewsValue = ref.watch(venueReviewsProvider(venue.id));
+    final reviewsCount = reviewsValue.maybeWhen(
+      data: (reviews) => reviews.length,
+      orElse: () => 0,
+    );
+    final averageRating = reviewsValue.maybeWhen(
+      data: (reviews) {
+        if (reviews.isEmpty) {
+          return venue.rating;
+        }
+        final total =
+            reviews.fold<int>(0, (sum, review) => sum + review.stars);
+        return total / reviews.length;
+      },
+      orElse: () => venue.rating,
+    );
+    final displayRating = reviewsCount > 0 ? averageRating : venue.rating;
+    final clampedRating = displayRating.clamp(0, 5);
     final isOpen = venue.isOpen;
     final addressText = venue.address.formatted;
     final hasDescription =
@@ -186,10 +206,10 @@ class _VenueDetailView extends StatelessWidget {
       symbol: '₽',
       decimalDigits: 0,
     );
-      final deliveryFeeText = '${venue.deliveryFee.toStringAsFixed(0)} ₽';
-      final averageCheckText = priceFormat.format(venue.averagePrice);
-      final initialProducts =
-          venue.type == VenueType.food ? venue.menu : venue.catalog;
+    final deliveryFeeText = '${venue.deliveryFee.toStringAsFixed(0)} ₽';
+    final averageCheckText = priceFormat.format(venue.averagePrice);
+    final initialProducts =
+        venue.type == VenueType.food ? venue.menu : venue.catalog;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -272,31 +292,40 @@ class _VenueDetailView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          RatingBarIndicator(
-                            rating: venue.rating,
-                            itemSize: 20,
-                            unratedColor: colorScheme.outlineVariant,
-                            itemBuilder: (context, index) => Icon(
-                              Icons.star_rounded,
-                              color: colorScheme.secondary,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            RatingBarIndicator(
+                              rating: clampedRating,
+                              itemSize: 20,
+                              unratedColor: colorScheme.outlineVariant,
+                              itemBuilder: (context, index) => Icon(
+                                Icons.star_rounded,
+                                color: colorScheme.secondary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            venue.rating.toStringAsFixed(1),
-                            style: ratingsTheme,
-                          ),
-                          const SizedBox(width: 16),
-                          _OpenBadge(
-                            isOpen: isOpen,
-                            colorScheme: colorScheme,
-                            theme: theme,
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 8),
+                            Text(
+                              clampedRating.toStringAsFixed(1),
+                              style: ratingsTheme,
+                            ),
+                            if (reviewsCount > 0) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                l10n.reviewsCountLabel(reviewsCount),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(width: 16),
+                            _OpenBadge(
+                              isOpen: isOpen,
+                              colorScheme: colorScheme,
+                              theme: theme,
+                            ),
+                          ],
+                        ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
@@ -382,29 +411,37 @@ class _VenueDetailView extends StatelessWidget {
                         icon: Icons.contact_phone_outlined,
                       ),
                       const SizedBox(height: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _ContactRow(
-                            icon: Icons.place_outlined,
-                            label: addressText,
-                            theme: theme,
-                            colorScheme: colorScheme,
-                          ),
-                          ...contactsEntries.map(
-                            (entry) => _ContactRow(
-                              icon: _contactIcon(entry.key),
-                              label: entry.value,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _ContactRow(
+                              icon: Icons.place_outlined,
+                              label: addressText,
                               theme: theme,
                               colorScheme: colorScheme,
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                            ...contactsEntries.map(
+                              (entry) => _ContactRow(
+                                icon: _contactIcon(entry.key),
+                                label: entry.value,
+                                theme: theme,
+                                colorScheme: colorScheme,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        _ReviewsSection(
+                          reviewsValue: reviewsValue,
+                          averageRating: displayRating,
+                          reviewsCount: reviewsCount,
+                          l10n: l10n,
+                          onRetry: () =>
+                              ref.invalidate(venueReviewsProvider(venue.id)),
+                        ),
+                        const SizedBox(height: 24),
                       ],
                     ),
-                  ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 24),
                     child: MenuCatalog(
@@ -525,6 +562,278 @@ class _ContactRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ReviewsSection extends StatelessWidget {
+  const _ReviewsSection({
+    required this.reviewsValue,
+    required this.averageRating,
+    required this.reviewsCount,
+    required this.l10n,
+    required this.onRetry,
+  });
+
+  final AsyncValue<List<ReviewModel>> reviewsValue;
+  final double averageRating;
+  final int reviewsCount;
+  final S l10n;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final ratingValue = averageRating.clamp(0, 5);
+
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                RatingBarIndicator(
+                  rating: ratingValue,
+                  itemCount: 5,
+                  itemSize: 18,
+                  unratedColor: colorScheme.outlineVariant,
+                  itemBuilder: (context, index) => Icon(
+                    Icons.star_rounded,
+                    color: colorScheme.secondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  ratingValue.toStringAsFixed(1),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.reviewsCountLabel(reviewsCount),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            reviewsValue.when(
+              data: (reviews) {
+                if (reviews.isEmpty) {
+                  return Text(
+                    l10n.reviewsEmpty,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: reviews.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) => _ReviewCard(
+                    review: reviews[index],
+                    l10n: l10n,
+                  ),
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: LoadingIndicator()),
+              ),
+              error: (error, _) {
+                final message = error is Failure
+                    ? error.message
+                    : l10n.errorGeneric;
+                return _ReviewsError(
+                  message: message,
+                  onRetry: onRetry,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({
+    required this.review,
+    required this.l10n,
+  });
+
+  final ReviewModel review;
+  final S l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final displayName = (review.userName ?? '').trim().isEmpty
+        ? l10n.reviewsAnonymous
+        : review.userName!.trim();
+    final initials = displayName.isNotEmpty
+        ? displayName.substring(0, 1).toUpperCase()
+        : '•';
+    final createdAt = review.createdAt;
+    final dateText = createdAt != null
+        ? DateFormat('d MMM yyyy', l10n.localeName)
+            .format(createdAt.toLocal())
+        : '';
+    final ratingValue = review.stars.clamp(0, 5).toDouble();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: colorScheme.primary.withOpacity(0.1),
+              child: Text(
+                initials,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (dateText.isNotEmpty)
+                    Text(
+                      dateText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            RatingBarIndicator(
+              rating: ratingValue,
+              itemSize: 16,
+              unratedColor: colorScheme.outlineVariant,
+              itemBuilder: (context, index) => Icon(
+                Icons.star_rounded,
+                color: colorScheme.secondary,
+              ),
+            ),
+          ],
+        ),
+        if (review.hasText) ...[
+          const SizedBox(height: 12),
+          Text(
+            review.text ?? '',
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+          ),
+        ],
+        if (review.hasPhotos) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: review.photoUrls
+                .map((url) => _ReviewPhotoThumbnail(imageUrl: url))
+                .toList(),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ReviewPhotoThumbnail extends StatelessWidget {
+  const _ReviewPhotoThumbnail({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 96,
+        height: 96,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => Container(
+            color: colorScheme.surfaceVariant,
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.image_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            color: colorScheme.surfaceVariant,
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: colorScheme.error,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReviewsError extends StatelessWidget {
+  const _ReviewsError({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = S.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          message,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.error,
+          ),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton(
+          onPressed: onRetry,
+          child: Text(l10n.retry),
+        ),
+      ],
     );
   }
 }

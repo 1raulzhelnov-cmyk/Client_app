@@ -166,11 +166,49 @@
     "cancellationReasonWrongAddress": "Wrong address",
     "confirmCancellation": "Confirm cancellation",
     "refundInfo": "Refund in 24h if not in transit.",
+  "reviewModalTitle": "Rate your order",
+  "reviewModalTitleWithName": "Rate your order from {venueName}",
+  "@reviewModalTitleWithName": {
+    "placeholders": {
+      "venueName": {}
+    }
+  },
+  "reviewModalSubtitle": "Share your experience to help others.",
+  "reviewModalRatingLabel": "Your rating",
+  "reviewModalTextLabel": "Review",
+  "reviewModalTextHint": "Tell us what you liked or what could be improved",
+  "reviewModalPhotosLabel": "Photos ({current}/{maximum})",
+  "@reviewModalPhotosLabel": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "maximum": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewModalAddPhotos": "Add photos",
+  "reviewModalSubmit": "Submit review",
+  "reviewModalImagePickError": "Couldn't pick images. Please try again.",
+  "reviewModalValidationRating": "Please select a rating.",
+  "reviewModalSuccess": "Thanks! Your review has been submitted.",
+  "reviewModalRemovePhotoTooltip": "Remove photo",
   "rateOrder": "Rate order",
   "leaveReview": "Leave a review",
   "submitReview": "Submit review",
   "addPhotos": "Add photos",
   "reviewThanks": "Thanks for your feedback!",
+  "reviewsCountLabel": "{count, plural, =1 {# review} other {# reviews}}",
+  "@reviewsCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reviewsEmpty": "No reviews yet",
+  "reviewsAnonymous": "Guest",
   "statusPlaced": "Placed",
   "statusConfirmed": "Confirmed",
   "statusPreparing": "Preparing",
