@@ -101,6 +101,9 @@ class S {
   String get otpSubtitle => _t('otpSubtitle');
   String get verifyCode => _t('verifyCode');
   String get resendCode => _t('resendCode');
+  String get sendCode => _t('sendCode');
+  String get otpSent => _t('otpSent');
+  String get invalidOtp => _t('invalidOtp');
   String get passwordMismatch => _t('passwordMismatch');
 
   // Profile
@@ -268,6 +271,9 @@ const Map<String, String> _ruValues = <String, String>{
   'otpSubtitle': 'Мы отправили SMS с кодом подтверждения',
   'verifyCode': 'Подтвердить код',
   'resendCode': 'Отправить код снова',
+  'sendCode': 'Отправить код',
+  'otpSent': 'Код подтверждения отправлен',
+  'invalidOtp': 'Неверный код подтверждения',
   'passwordMismatch': 'Пароли не совпадают',
   'profileTitle': 'Профиль',
   'editProfileTitle': 'Редактирование профиля',
@@ -403,6 +409,9 @@ const Map<String, String> _enValues = <String, String>{
   'otpSubtitle': 'We sent an SMS with a verification code',
   'verifyCode': 'Verify code',
   'resendCode': 'Resend code',
+  'sendCode': 'Send code',
+  'otpSent': 'Verification code sent',
+  'invalidOtp': 'Invalid verification code',
   'passwordMismatch': 'Passwords do not match',
   'profileTitle': 'Profile',
   'editProfileTitle': 'Edit profile',

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'user_model.g.dart';
@@ -31,6 +32,25 @@ class UserModel {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       photoUrl: photoUrl ?? this.photoUrl,
+    );
+  }
+
+  factory UserModel.fromFirebase(User user) {
+    final displayName = user.displayName?.trim();
+    final email = user.email?.trim();
+    final phone = user.phoneNumber?.trim();
+    final fallbackName = email?.split('@').first;
+
+    return UserModel(
+      id: user.uid,
+      name: (displayName != null && displayName.isNotEmpty)
+          ? displayName
+          : fallbackName ??
+              phone ??
+              'User',
+      email: email ?? '${user.uid}@placeholder.local',
+      phone: phone,
+      photoUrl: user.photoURL,
     );
   }
 
