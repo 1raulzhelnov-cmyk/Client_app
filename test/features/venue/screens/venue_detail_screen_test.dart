@@ -23,39 +23,8 @@ void main() {
       apiService = _MockApiService();
     });
 
-    testWidgets('отображает детали заведения и табы меню', (tester) async {
-      final response = <String, dynamic>{
-        'id': 'venue-321',
-        'name': 'Городская трапезная',
-        'type': 'food',
-        'rating': 4.7,
-        'cuisines': ['европейская'],
-        'avgPrice': 780,
-        'photos': [
-          'https://example.com/images/venue-321-1.jpg',
-          'https://example.com/images/venue-321-2.jpg',
-        ],
-        'deliveryFee': 120,
-        'deliveryTimeMinutes': '25-35',
-        'address': <String, dynamic>{
-          'id': 'addr-1',
-          'formatted': 'Москва, ул. Ленина, 15',
-          'lat': 55.7522,
-          'lng': 37.6156,
-          'instructions': 'Позвонить за 10 минут',
-          'isDefault': false,
-        },
-        'description': 'Сезонное меню, фермерские продукты и авторские напитки.',
-        'isOpen': true,
-        'hours': <String, String>{
-          'mon-fri': '09:00-22:00',
-          'sat-sun': '10:00-23:30',
-        },
-        'contacts': <String, String>{
-          'phone': '+7 495 000-00-00',
-          'website': 'https://gorodtrapeznaya.ru',
-        },
-        'menu': [
+      testWidgets('отображает детали заведения и каталог меню', (tester) async {
+        final products = <Map<String, dynamic>>[
           <String, dynamic>{
             'id': 'soup-borscht',
             'venueId': 'venue-321',
@@ -78,43 +47,86 @@ void main() {
             'category': 'Десерты',
             'type': 'food',
           },
-        ],
-      };
+        ];
 
-      when(
-        apiService.get<Map<String, dynamic>>('/venues/venue-321'),
-      ).thenAnswer((_) async => right(response));
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            apiServiceProvider.overrideWithValue(apiService),
+        final response = <String, dynamic>{
+          'id': 'venue-321',
+          'name': 'Городская трапезная',
+          'type': 'food',
+          'rating': 4.7,
+          'cuisines': ['европейская'],
+          'avgPrice': 780,
+          'photos': [
+            'https://example.com/images/venue-321-1.jpg',
+            'https://example.com/images/venue-321-2.jpg',
           ],
-          child: MaterialApp(
-            locale: const Locale('ru'),
-            supportedLocales: S.supportedLocales,
-            localizationsDelegates: const [
-              S.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            home: const VenueDetailScreen(venueId: 'venue-321'),
+          'deliveryFee': 120,
+          'deliveryTimeMinutes': '25-35',
+          'address': <String, dynamic>{
+            'id': 'addr-1',
+            'formatted': 'Москва, ул. Ленина, 15',
+            'lat': 55.7522,
+            'lng': 37.6156,
+            'instructions': 'Позвонить за 10 минут',
+            'isDefault': false,
+          },
+          'description': 'Сезонное меню, фермерские продукты и авторские напитки.',
+          'isOpen': true,
+          'hours': <String, String>{
+            'mon-fri': '09:00-22:00',
+            'sat-sun': '10:00-23:30',
+          },
+          'contacts': <String, String>{
+            'phone': '+7 495 000-00-00',
+            'website': 'https://gorodtrapeznaya.ru',
+          },
+          'menu': products,
+        };
+
+        when(
+          apiService.get<Map<String, dynamic>>('/venues/venue-321'),
+        ).thenAnswer((_) async => right(response));
+        when(
+          apiService.get<dynamic>(
+            '/products',
+            queryParameters: anyNamed('queryParameters'),
           ),
-        ),
-      );
+        ).thenAnswer((_) async => right(products));
 
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              apiServiceProvider.overrideWithValue(apiService),
+            ],
+            child: MaterialApp(
+              locale: const Locale('ru'),
+              supportedLocales: S.supportedLocales,
+              localizationsDelegates: const [
+                S.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              home: const VenueDetailScreen(venueId: 'venue-321'),
+            ),
+          ),
+        );
 
-      expect(find.byType(SliverAppBar), findsOneWidget);
-      expect(find.text('Городская трапезная'), findsWidgets);
-      expect(find.text('+7 495 000-00-00'), findsOneWidget);
-      expect(find.byType(TabBar), findsOneWidget);
-      expect(find.text('Супы'), findsOneWidget);
-      expect(find.text('Десерты'), findsOneWidget);
-      expect(find.text('Борщ с говядиной'), findsOneWidget);
-    });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(SliverAppBar), findsOneWidget);
+        expect(find.text('Городская трапезная'), findsWidgets);
+        expect(find.text('+7 495 000-00-00'), findsOneWidget);
+        expect(find.byType(TextField), findsOneWidget);
+        expect(find.byType(ExpansionTile), findsNWidgets(2));
+        expect(find.text('Супы'), findsOneWidget);
+        expect(find.text('Десерты'), findsOneWidget);
+
+        await tester.tap(find.text('Супы').first);
+        await tester.pumpAndSettle();
+        expect(find.text('Борщ с говядиной'), findsOneWidget);
+      });
   });
 }

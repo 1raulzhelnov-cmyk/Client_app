@@ -10,6 +10,7 @@ import '../../../models/product_model.dart';
 import '../../../models/venue_model.dart';
 import '../../../widgets/loading_indicator.dart';
 import '../providers/venue_detail_notifier.dart';
+import '../widgets/menu_catalog.dart';
 
 class VenueDetailScreen extends ConsumerStatefulWidget {
   const VenueDetailScreen({
@@ -109,13 +110,10 @@ class _VenueDetailView extends StatelessWidget {
       symbol: '₽',
       decimalDigits: 0,
     );
-    final deliveryFeeText = '${venue.deliveryFee.toStringAsFixed(0)} ₽';
-    final averageCheckText = priceFormat.format(venue.averagePrice);
-
-    final menuSections = _groupProductsByCategory(
-      venue.type == VenueType.food ? venue.menu : venue.catalog,
-      l10n,
-    );
+      final deliveryFeeText = '${venue.deliveryFee.toStringAsFixed(0)} ₽';
+      final averageCheckText = priceFormat.format(venue.averagePrice);
+      final initialProducts =
+          venue.type == VenueType.food ? venue.menu : venue.catalog;
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -328,15 +326,19 @@ class _VenueDetailView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 24),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                if (menuSections.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 24),
-                    child: _MenuCatalogSection(
-                      sections: menuSections,
+                    child: MenuCatalog(
+                      venueId: venue.id,
                       isMenu: venue.type == VenueType.food,
+                      initialProducts: initialProducts,
+                      onAddToCart: (product) =>
+                          _showAddToCart(context, product),
+                      onCustomizeProduct: (product) =>
+                          _showCustomizeProduct(context, product),
                     ),
                   ),
               ],
@@ -346,222 +348,29 @@ class _VenueDetailView extends StatelessWidget {
       ),
     );
   }
-}
 
-class _MenuCatalogSection extends StatefulWidget {
-  const _MenuCatalogSection({
-    required this.sections,
-    required this.isMenu,
-  });
-
-  final List<_ProductSection> sections;
-  final bool isMenu;
-
-  @override
-  State<_MenuCatalogSection> createState() => _MenuCatalogSectionState();
-}
-
-class _MenuCatalogSectionState extends State<_MenuCatalogSection>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: widget.sections.length,
-      vsync: this,
-    )..addListener(_handleTabChanged);
+  void _showAddToCart(BuildContext context, ProductModel product) {
+    final l10n = S.of(context);
+    _showSnackBar(
+      context,
+      '${product.name} — ${l10n.addToCart}',
+    );
   }
 
-  @override
-  void didUpdateWidget(covariant _MenuCatalogSection oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.sections.length != widget.sections.length) {
-      _tabController
-        ..removeListener(_handleTabChanged)
-        ..dispose();
-      _tabController = TabController(
-        length: widget.sections.length,
-        vsync: this,
-      )..addListener(_handleTabChanged);
-      setState(() {});
-    }
+  void _showCustomizeProduct(BuildContext context, ProductModel product) {
+    final l10n = S.of(context);
+    _showSnackBar(
+      context,
+      '${product.name} — ${l10n.customize}',
+    );
   }
 
-  @override
-  void dispose() {
-    _tabController
-      ..removeListener(_handleTabChanged)
-      ..dispose();
-    super.dispose();
-  }
-
-  void _handleTabChanged() {
-    if (mounted && _tabController.indexIsChanging == false) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    if (widget.sections.isEmpty) {
-      final l10n = S.of(context);
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionTitle(
-              title: widget.isMenu ? l10n.menuTab : l10n.catalogTab,
-              icon: Icons.list_alt_outlined,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.unavailable,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+  void _showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message)),
       );
-    }
-
-    final currentSection = widget.sections[_tabController.index];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _SectionTitle(
-            title:
-                widget.isMenu ? S.of(context).menuTab : S.of(context).catalogTab,
-            icon: Icons.list_alt_outlined,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            labelColor: colorScheme.primary,
-            unselectedLabelColor: colorScheme.onSurfaceVariant,
-            indicatorColor: colorScheme.primary,
-            tabs: widget.sections
-                .map(
-                  (section) => Tab(text: section.title),
-                )
-                .toList(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: currentSection.products.length,
-          separatorBuilder: (_, __) => const Divider(height: 24),
-          itemBuilder: (context, index) {
-            final product = currentSection.products[index];
-            return _ProductTile(product: product);
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _ProductTile extends StatelessWidget {
-  const _ProductTile({required this.product});
-
-  final ProductModel product;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 72,
-          width: 72,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: colorScheme.surfaceVariant,
-          ),
-          alignment: Alignment.center,
-          child: product.imageUrl.isEmpty
-              ? Icon(
-                  Icons.fastfood_outlined,
-                  color: colorScheme.onSurfaceVariant,
-                )
-              : ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: CachedNetworkImage(
-                    imageUrl: product.imageUrl,
-                    fit: BoxFit.cover,
-                    width: 72,
-                    height: 72,
-                    placeholder: (context, url) => Container(
-                      color: colorScheme.surfaceVariant,
-                    ),
-                    errorWidget: (context, url, error) => Icon(
-                      Icons.fastfood_outlined,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                product.name,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                product.description,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${product.price.toStringAsFixed(0)} ₽',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              if (!product.available)
-                Text(
-                  S.of(context).unavailable,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.error,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 }
 
@@ -750,42 +559,6 @@ class _GalleryPlaceholder extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ProductSection {
-  const _ProductSection({
-    required this.title,
-    required this.products,
-  });
-
-  final String title;
-  final List<ProductModel> products;
-}
-
-List<_ProductSection> _groupProductsByCategory(
-  List<ProductModel> products,
-  S l10n,
-) {
-  if (products.isEmpty) {
-    return const [];
-  }
-  final grouped = <String, List<ProductModel>>{};
-  for (final product in products) {
-    final key = (product.category?.trim().isNotEmpty ?? false)
-        ? product.category!.trim()
-        : l10n.otherCategory;
-    grouped.putIfAbsent(key, () => <ProductModel>[]).add(product);
-  }
-  final sections = grouped.entries
-      .map(
-        (entry) => _ProductSection(
-          title: entry.key,
-          products: entry.value,
-        ),
-      )
-      .toList()
-    ..sort((a, b) => a.title.compareTo(b.title));
-  return sections;
 }
 
 IconData _contactIcon(String key) {
