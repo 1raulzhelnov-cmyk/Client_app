@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,12 +39,28 @@ final apiServiceProvider = Provider<ApiService>((ref) {
   );
 });
 
+final googleSignInProvider = Provider<GoogleSignIn>((ref) {
+  return GoogleSignIn(
+    scopes: const <String>[
+      'email',
+    ],
+  );
+});
+
+final appleSignInProvider = Provider<AppleSignInFacade>((ref) {
+  return const AppleSignInFacade();
+});
+
 final authServiceProvider = Provider<AuthService>((ref) {
   final firebaseAuth = ref.watch(firebaseAuthProvider);
   final apiService = ref.watch(apiServiceProvider);
+  final googleSignIn = ref.watch(googleSignInProvider);
+  final appleSignIn = ref.watch(appleSignInProvider);
   return AuthService(
     firebaseAuth: firebaseAuth,
     apiService: apiService,
+    googleSignIn: googleSignIn,
+    appleSignIn: appleSignIn,
   );
 });
 

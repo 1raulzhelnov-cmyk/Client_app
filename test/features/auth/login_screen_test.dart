@@ -16,14 +16,27 @@ class MockAuthService extends Mock implements AuthService {}
 class MockFirebaseAuth extends Mock implements FirebaseAuth {}
 
 class _SilentAuthNotifier extends AuthNotifier {
+  bool googleCalled = false;
+  bool appleCalled = false;
+
   @override
   FutureOr<UserModel?> build() => null;
+
+  @override
+  Future<void> googleSignIn() async {
+    googleCalled = true;
+  }
+
+  @override
+  Future<void> appleSignIn() async {
+    appleCalled = true;
+  }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('LoginScreen validation', () {
+  group('LoginScreen', () {
     late MockAuthService authService;
     late MockFirebaseAuth firebaseAuth;
 
@@ -33,13 +46,20 @@ void main() {
       when(firebaseAuth.currentUser).thenReturn(null);
     });
 
-    Future<void> pumpLoginScreen(WidgetTester tester) async {
+    Future<_SilentAuthNotifier> pumpLoginScreen(
+      WidgetTester tester,
+    ) async {
+      late _SilentAuthNotifier notifier;
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             authServiceProvider.overrideWithValue(authService),
             firebaseAuthProvider.overrideWithValue(firebaseAuth),
-            authNotifierProvider.overrideWith(_SilentAuthNotifier.new),
+            authNotifierProvider.overrideWith(() {
+              notifier = _SilentAuthNotifier();
+              return notifier;
+            }),
           ],
           child: MaterialApp(
             locale: const Locale('ru'),
@@ -55,6 +75,7 @@ void main() {
         ),
       );
       await tester.pump();
+      return notifier;
     }
 
     testWidgets('shows required validation messages', (tester) async {
@@ -86,6 +107,28 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.invalidEmail), findsOneWidget);
+    });
+
+    testWidgets('taps Google button and calls notifier', (tester) async {
+      final l10n = await S.load(const Locale('ru'));
+
+      final notifier = await pumpLoginScreen(tester);
+
+      await tester.tap(find.text(l10n.googleSignIn));
+      await tester.pump();
+
+      expect(notifier.googleCalled, isTrue);
+    });
+
+    testWidgets('taps Apple button and calls notifier', (tester) async {
+      final l10n = await S.load(const Locale('ru'));
+
+      final notifier = await pumpLoginScreen(tester);
+
+      await tester.tap(find.text(l10n.appleSignIn));
+      await tester.pump();
+
+      expect(notifier.appleCalled, isTrue);
     });
   });
 }

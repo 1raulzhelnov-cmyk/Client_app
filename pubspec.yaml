@@ -32,8 +32,9 @@ dependencies:
   shared_preferences: ^2.2.2
   uuid: ^4.2.1
   dartz: ^0.10.1
-  equatable: ^2.0.5
-  collection: ^1.18.0
+    equatable: ^2.0.5
+    collection: ^1.18.0
+    crypto: ^3.0.3
   google_fonts: ^6.1.0
   json_annotation: ^4.9.0
   rating_bar_flutter: ^2.0.0

@@ -93,28 +93,69 @@ class LoginScreen extends HookConsumerWidget {
                   validator: (value) => Validators.password(value, l10n),
                   autofillHints: const [AutofillHints.password],
                 ),
-                const SizedBox(height: 24),
-                AppButton(
-                  label: l10n.loginButton,
-                  isLoading: isLoading,
-                  onPressed: () async {
-                    if (isLoading) {
-                      return;
-                    }
-                    final formState = formKey.currentState;
-                    if (formState == null ||
-                        !formState.validate()) {
-                      return;
-                    }
-                    FocusScope.of(context).unfocus();
-                    await ref
-                        .read(authNotifierProvider.notifier)
-                        .loginEmail(
-                          emailController.text.trim(),
-                          passwordController.text,
-                        );
-                  },
-                ),
+                  const SizedBox(height: 24),
+                  AppButton(
+                    label: l10n.loginButton,
+                    isLoading: isLoading,
+                    onPressed: () async {
+                      if (isLoading) {
+                        return;
+                      }
+                      final formState = formKey.currentState;
+                      if (formState == null || !formState.validate()) {
+                        return;
+                      }
+                      FocusScope.of(context).unfocus();
+                      await ref
+                          .read(authNotifierProvider.notifier)
+                          .loginEmail(
+                            emailController.text.trim(),
+                            passwordController.text,
+                          );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          l10n.orDivider,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.g_translate),
+                    label: Text(l10n.googleSignIn),
+                    onPressed: isLoading
+                        ? null
+                        : () => ref
+                            .read(authNotifierProvider.notifier)
+                            .googleSignIn(),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.apple),
+                    label: Text(l10n.appleSignIn),
+                    onPressed: isLoading
+                        ? null
+                        : () => ref
+                            .read(authNotifierProvider.notifier)
+                            .appleSignIn(),
+                  ),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
