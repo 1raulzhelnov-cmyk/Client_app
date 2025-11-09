@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../generated/l10n.dart';
 import '../../auth/providers/auth_notifier.dart';
 import '../providers/home_providers.dart';
-import 'cart_screen.dart';
+import '../../cart/screens/cart_screen.dart';
 import 'home_tab.dart';
 import 'orders_screen.dart';
 import 'profile_tab.dart';

@@ -18,11 +18,6 @@ final flowerCatalogProvider =
   return ref.watch(homeRepositoryProvider).fetchFlowers();
 });
 
-final cartItemsProvider =
-    FutureProvider.autoDispose<List<CartItemModel>>((ref) {
-  return ref.watch(homeRepositoryProvider).fetchCartItems();
-});
-
 final ordersProvider = FutureProvider.autoDispose<List<OrderModel>>((ref) {
   return ref.watch(homeRepositoryProvider).fetchOrders();
 });
@@ -54,11 +49,6 @@ class HomeRepository {
   Future<List<FlowerModel>> fetchFlowers() async {
     await _simulateDelay();
     return _flowers();
-  }
-
-  Future<List<CartItemModel>> fetchCartItems() async {
-    await _simulateDelay();
-    return _cartItems();
   }
 
   Future<List<OrderModel>> fetchOrders() async {
