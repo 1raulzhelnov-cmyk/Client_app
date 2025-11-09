@@ -12,7 +12,11 @@ import 'core/constants/app_constants.dart';
 import 'core/di/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'generated/l10n.dart';
+import 'models/address_model.dart';
 import 'models/user_model.dart';
+import 'features/address/screens/add_address_screen.dart';
+import 'features/address/screens/address_list_screen.dart';
+import 'features/address/screens/edit_address_screen.dart';
 import 'features/auth/models/otp_screen_args.dart';
 import 'features/auth/providers/auth_notifier.dart';
 import 'features/auth/screens/home_screen.dart';
@@ -101,19 +105,37 @@ class EazyApp extends ConsumerWidget {
           path: '/home',
           builder: (context, state) => const HomeScreen(),
         ),
-        GoRoute(
-          path: '/profile',
-          builder: (context, state) => const ProfileScreen(),
-        ),
-        GoRoute(
-          path: '/profile/edit',
-          builder: (context, state) => const EditProfileScreen(),
-        ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: '/profile/edit',
+            builder: (context, state) => const EditProfileScreen(),
+          ),
+          GoRoute(
+            path: '/addresses',
+            builder: (context, state) => const AddressListScreen(),
+          ),
+          GoRoute(
+            path: '/addresses/add',
+            builder: (context, state) => const AddAddressScreen(),
+          ),
+          GoRoute(
+            path: '/addresses/edit',
+            builder: (context, state) {
+              final extra = state.extra;
+              if (extra is! AddressModel) {
+                return const AddressListScreen();
+              }
+              return EditAddressScreen(address: extra);
+            },
+          ),
       ],
       redirect: (context, state) {
         final isAuthRoute = state.matchedLocation == '/login' ||
             state.matchedLocation == '/register' ||
-            state.matchedLocation == '/otp';
+              state.matchedLocation == '/otp';
 
         if (authState.isLoading) {
           return null;

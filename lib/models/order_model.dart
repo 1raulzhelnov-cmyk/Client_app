@@ -101,12 +101,12 @@ class OrderModel {
       userId: userId,
       items: fromCart,
       total: total,
-      address: const AddressModel(
-        id: '',
-        formattedAddress: '',
-        latitude: 0,
-        longitude: 0,
-      ),
+        address: const AddressModel(
+          id: '',
+          formatted: '',
+          lat: 0,
+          lng: 0,
+        ),
       status: OrderStatus.placed,
       createdAt: DateTime.now(),
     );

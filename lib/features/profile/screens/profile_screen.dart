@@ -114,6 +114,12 @@ class _ProfileContent extends StatelessWidget {
           label: l10n.editProfileButton,
           onPressed: () => context.push('/profile/edit'),
         ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.location_on_outlined),
+            label: Text(l10n.addressesTitle),
+            onPressed: () => context.push('/addresses'),
+          ),
       ],
     );
   }

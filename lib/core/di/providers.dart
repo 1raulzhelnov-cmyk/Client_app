@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_place/google_place.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api/api_service.dart';
 import '../../services/auth/auth_service.dart';
 import '../../services/firestore/firestore_service.dart';
+import '../../services/maps/maps_service.dart';
 import '../config/env.dart';
 
 class AppState {
@@ -57,6 +59,16 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
       'email',
     ],
   );
+});
+
+final googlePlaceProvider = Provider<GooglePlace>((ref) {
+  final apiKey = ref.watch(envConfigProvider).googleMapsApiKey;
+  return GooglePlace(apiKey);
+});
+
+final mapsServiceProvider = Provider<MapsService>((ref) {
+  final googlePlace = ref.watch(googlePlaceProvider);
+  return MapsService(googlePlace: googlePlace);
 });
 
 final appleSignInProvider = Provider<AppleSignInFacade>((ref) {
