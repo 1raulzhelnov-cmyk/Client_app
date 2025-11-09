@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_place/google_place.dart';
+import 'package:google_places_flutter/model/prediction.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -24,7 +24,7 @@ class AddAddressScreen extends HookConsumerWidget {
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final addressController = useTextEditingController();
     final instructionsController = useTextEditingController();
-    final predictions = useState<List<AutocompletePrediction>>(<AutocompletePrediction>[]);
+    final predictions = useState<List<Prediction>>(<Prediction>[]);
     final selectedLatLng = useState<LatLng?>(null);
     final selectedFormatted = useState<String>('');
     final isSubmitting = useState<bool>(false);
@@ -34,9 +34,7 @@ class AddAddressScreen extends HookConsumerWidget {
     final debouncer = useRef<Timer?>(null);
 
     useEffect(() {
-      return () {
-        debouncer.value?.cancel();
-      };
+      return () => debouncer.value?.cancel();
     }, const []);
 
     Future<void> handleSearch(String value) async {
@@ -52,9 +50,9 @@ class AddAddressScreen extends HookConsumerWidget {
       });
     }
 
-    Future<void> selectPrediction(AutocompletePrediction prediction) async {
+    Future<void> selectPrediction(Prediction prediction) async {
       final placeId = prediction.placeId;
-      if (placeId == null) {
+      if (placeId == null || placeId.isEmpty) {
         return;
       }
       final location = await mapsService.getDetails(placeId);

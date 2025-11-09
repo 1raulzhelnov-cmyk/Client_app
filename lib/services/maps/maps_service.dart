@@ -1,26 +1,45 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_place/google_place.dart';
+import 'package:google_places_flutter/model/prediction.dart';
+import 'package:http/http.dart' as http;
 
 class MapsService {
   MapsService({
-    required GooglePlace googlePlace,
-  }) : _googlePlace = googlePlace;
+    required this.apiKey,
+    http.Client? httpClient,
+  }) : _client = httpClient ?? http.Client();
 
-  final GooglePlace _googlePlace;
+  final String apiKey;
+  final http.Client _client;
 
-  Future<List<AutocompletePrediction>> autocomplete(String input) async {
+  Future<List<Prediction>> autocomplete(String input) async {
     final query = input.trim();
-    if (query.length < 3) {
+    if (query.length < 3 || !_hasValidKey) {
       return const [];
     }
     try {
-      final response = await _googlePlace.autocomplete.get(
-        query,
-        language: 'ru',
-        components: [Component('country', 'ru')],
+      final uri = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/autocomplete/json',
+        <String, String>{
+          'input': query,
+          'language': 'ru',
+          'components': 'country:ru',
+          'key': apiKey,
+        },
       );
-      return response?.predictions ?? const [];
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) {
+        return const [];
+      }
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final predictions = decoded['predictions'] as List<dynamic>? ?? const [];
+      return predictions
+          .whereType<Map<String, dynamic>>()
+          .map(Prediction.fromJson)
+          .toList();
     } catch (error, stackTrace) {
       debugPrint('Maps autocomplete error: $error');
       debugPrintStack(stackTrace: stackTrace);
@@ -29,26 +48,42 @@ class MapsService {
   }
 
   Future<LatLng?> getDetails(String placeId) async {
-    if (placeId.isEmpty) {
+    if (placeId.isEmpty || !_hasValidKey) {
       return null;
     }
     try {
-      final response = await _googlePlace.details.get(
-        placeId,
-        language: 'ru',
-        fields: 'geometry/location,formatted_address',
+      final uri = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/details/json',
+        <String, String>{
+          'place_id': placeId,
+          'language': 'ru',
+          'fields': 'geometry/location,formatted_address',
+          'key': apiKey,
+        },
       );
-      final location = response?.result?.geometry?.location;
-      final lat = location?.lat;
-      final lng = location?.lng;
+      final response = await _client.get(uri);
+      if (response.statusCode != 200) {
+        return null;
+      }
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = decoded['result'] as Map<String, dynamic>? ?? const {};
+      final geometry =
+          result['geometry'] as Map<String, dynamic>? ?? const {};
+      final location =
+          geometry['location'] as Map<String, dynamic>? ?? const {};
+      final lat = location['lat'] as num?;
+      final lng = location['lng'] as num?;
       if (lat == null || lng == null) {
         return null;
       }
-      return LatLng(lat, lng);
+      return LatLng(lat.toDouble(), lng.toDouble());
     } catch (error, stackTrace) {
       debugPrint('Maps details error: $error');
       debugPrintStack(stackTrace: stackTrace);
       return null;
     }
   }
+
+  bool get _hasValidKey => apiKey.trim().isNotEmpty;
 }

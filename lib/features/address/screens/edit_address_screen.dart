@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:google_place/google_place.dart';
+import 'package:google_places_flutter/model/prediction.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
@@ -30,7 +30,7 @@ class EditAddressScreen extends HookConsumerWidget {
     final addressController = useTextEditingController(text: address.formatted);
     final instructionsController =
         useTextEditingController(text: address.instructions ?? '');
-    final predictions = useState<List<AutocompletePrediction>>(<AutocompletePrediction>[]);
+    final predictions = useState<List<Prediction>>(<Prediction>[]);
     final selectedLatLng =
         useState<LatLng?>(LatLng(address.lat, address.lng));
     final isSubmitting = useState<bool>(false);
@@ -40,9 +40,7 @@ class EditAddressScreen extends HookConsumerWidget {
     final debouncer = useRef<Timer?>(null);
 
     useEffect(() {
-      return () {
-        debouncer.value?.cancel();
-      };
+      return () => debouncer.value?.cancel();
     }, const []);
 
     Future<void> handleSearch(String value) async {
@@ -58,9 +56,9 @@ class EditAddressScreen extends HookConsumerWidget {
       });
     }
 
-    Future<void> selectPrediction(AutocompletePrediction prediction) async {
+    Future<void> selectPrediction(Prediction prediction) async {
       final placeId = prediction.placeId;
-      if (placeId == null) {
+      if (placeId == null || placeId.isEmpty) {
         return;
       }
       final location = await mapsService.getDetails(placeId);
@@ -75,7 +73,6 @@ class EditAddressScreen extends HookConsumerWidget {
       }
       final formatted = prediction.description ?? '';
       selectedLatLng.value = location;
-      selectedFormatted.value = formatted;
       addressController.text = formatted;
       predictions.value = const [];
       final controller = mapController.value;
