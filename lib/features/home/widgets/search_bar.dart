@@ -180,11 +180,11 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-      final icon = IconButton(
-        tooltip: S.of(context).applyFilters,
-        onPressed: onPressed,
-        icon: const Icon(Icons.filter_list),
-      );
+    final icon = IconButton(
+      tooltip: S.of(context).applyFilters,
+      onPressed: onPressed,
+      icon: const Icon(Icons.filter_list),
+    );
 
     if (!hasActiveFilters) {
       return icon;

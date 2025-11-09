@@ -66,263 +66,86 @@ class _VenueListState extends ConsumerState<VenueList> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = S.of(context);
     final venuesAsync = ref.watch(venueNotifierProvider);
-    final filters = ref.watch(venueFiltersNotifierProvider);
     final notifier = ref.read(venueNotifierProvider.notifier);
     final isLoadingMore =
         venuesAsync.isLoading && (venuesAsync.valueOrNull?.isNotEmpty ?? false);
 
-      return Column(
-        children: [
-          _FiltersBar(
-            filters: filters,
-            onReset: () => ref.read(venueFiltersNotifierProvider.notifier).reset(),
-            onCuisineChanged: (value) =>
-                ref.read(venueFiltersNotifierProvider.notifier).setCuisine(value),
-            onRatingChanged: (value) => ref
-                .read(venueFiltersNotifierProvider.notifier)
-                .setMinRating(value),
-            onPriceChanged: (value) => ref
-                .read(venueFiltersNotifierProvider.notifier)
-                .setMaxAvgPrice(value),
-            onSortChanged: (sort) => ref
-                .read(venueFiltersNotifierProvider.notifier)
-                .setSort(sort),
-          ),
-          Expanded(
-            child: Builder(
-              builder: (context) {
-                final venues = _extractVenues(venuesAsync);
-                final failure = _extractFailure(venuesAsync);
-                final isInitialLoading =
-                    venuesAsync.isLoading && venues.isEmpty && failure == null;
-                final hasHardError = failure != null && venues.isEmpty;
+    final venues = _extractVenues(venuesAsync);
+    final failure = _extractFailure(venuesAsync);
+    final isInitialLoading =
+        venuesAsync.isLoading && venues.isEmpty && failure == null;
+    final hasHardError = failure != null && venues.isEmpty;
 
-                if (isInitialLoading) {
-                  return const Center(child: LoadingIndicator());
-                }
+    if (isInitialLoading) {
+      return const Center(child: LoadingIndicator());
+    }
 
-                if (hasHardError) {
-                  return _ErrorRetry(
-                    message: failure!.message,
-                    onRetry: () => ref.invalidate(venueNotifierProvider),
-                  );
-                }
+    if (hasHardError) {
+      return _ErrorRetry(
+        message: failure!.message,
+        onRetry: () => ref.invalidate(venueNotifierProvider),
+      );
+    }
 
-                if (venues.isEmpty) {
-                  return RefreshIndicator(
-                    onRefresh: () => ref
-                        .refresh(venueNotifierProvider.future)
-                        .then((_) {}),
-                    child: ListView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        const SizedBox(height: 120),
-                        _EmptyVenues(message: l10n.noVenuesFound),
-                      ],
-                    ),
-                  );
-                }
-
-                final hasMore = notifier.hasMore;
-                final showLoadMore =
-                    (hasMore && venues.isNotEmpty) || isLoadingMore;
-                final itemCount = venues.length + (showLoadMore ? 1 : 0);
-                final showErrorBanner = failure != null;
-
-                return RefreshIndicator(
-                  onRefresh: () =>
-                      ref.refresh(venueNotifierProvider.future).then((_) {}),
-                  child: ListView(
-                    controller: _scrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      if (showErrorBanner)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _ErrorBanner(
-                            message: failure!.message,
-                            onDismiss: () =>
-                                ref.invalidate(venueNotifierProvider),
-                          ),
-                        ),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.78,
-                        ),
-                        itemCount: itemCount,
-                        itemBuilder: (context, index) {
-                          if (index >= venues.length) {
-                            return const _LoadMoreCard();
-                          }
-                          final venue = venues[index];
-                          return _VenueCard(
-                            venue: venue,
-                            priceFormat: _priceFormat,
-                            onTap: () => widget.onVenueTap?.call(venue),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _FiltersBar extends StatelessWidget {
-  const _FiltersBar({
-    required this.filters,
-    required this.onReset,
-    required this.onCuisineChanged,
-    required this.onRatingChanged,
-    required this.onPriceChanged,
-    required this.onSortChanged,
-  });
-
-  final VenueFilterState filters;
-  final VoidCallback onReset;
-  final ValueChanged<String?> onCuisineChanged;
-  final ValueChanged<double?> onRatingChanged;
-  final ValueChanged<double?> onPriceChanged;
-  final ValueChanged<VenueSort> onSortChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cuisines = _cuisineOptions[filters.type] ?? const <String>[];
-    final cuisineItems = <DropdownMenuItem<String?>>[
-      const DropdownMenuItem(value: null, child: Text('Все кухни')),
-      ...cuisines.map(
-        (cuisine) => DropdownMenuItem<String?>(
-          value: cuisine,
-          child: Text(_capitalize(cuisine)),
-        ),
-      ),
-    ];
-    final ratingItems = [
-      const DropdownMenuItem<double?>(value: null, child: Text('Любой рейтинг')),
-      const DropdownMenuItem<double?>(value: 3.5, child: Text('От 3.5')),
-      const DropdownMenuItem<double?>(value: 4.0, child: Text('От 4.0')),
-      const DropdownMenuItem<double?>(value: 4.5, child: Text('От 4.5')),
-    ];
-    final priceItems = [
-      const DropdownMenuItem<double?>(value: null, child: Text('Любая цена')),
-      const DropdownMenuItem<double?>(value: 500, child: Text('До 500 ₽')),
-      const DropdownMenuItem<double?>(value: 1000, child: Text('До 1000 ₽')),
-      const DropdownMenuItem<double?>(value: 1500, child: Text('До 1500 ₽')),
-      const DropdownMenuItem<double?>(value: 2500, child: Text('До 2500 ₽')),
-    ];
-
-    return Material(
-      color: theme.colorScheme.surface,
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    if (venues.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: () => ref.refresh(venueNotifierProvider.future).then((_) {}),
+        child: ListView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
-            Row(
-              children: [
-                Text(
-                  'Фильтры',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: onReset,
-                  child: const Text('Сбросить'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<String?>(
-                    value: filters.cuisine,
-                    items: cuisineItems,
-                    decoration: const InputDecoration(
-                      labelText: 'Кухня',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onChanged: onCuisineChanged,
-                  ),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<double?>(
-                    value: filters.minRating,
-                    items: ratingItems,
-                    decoration: const InputDecoration(
-                      labelText: 'Рейтинг',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onChanged: onRatingChanged,
-                  ),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: DropdownButtonFormField<double?>(
-                    value: filters.maxAvgPrice,
-                    items: priceItems,
-                    decoration: const InputDecoration(
-                      labelText: 'Цена',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onChanged: onPriceChanged,
-                  ),
-                ),
-                SizedBox(
-                  width: 200,
-                  child: DropdownButtonFormField<VenueSort>(
-                    value: filters.sort,
-                    items: VenueSort.values
-                        .map(
-                          (sort) => DropdownMenuItem(
-                            value: sort,
-                            child: Text(sort.label),
-                          ),
-                        )
-                        .toList(),
-                    decoration: const InputDecoration(
-                      labelText: 'Сортировка',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onChanged: (sort) {
-                      if (sort != null) {
-                        onSortChanged(sort);
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
+            const SizedBox(height: 120),
+            _EmptyVenues(message: l10n.noVenuesFound),
           ],
         ),
+      );
+    }
+
+    final hasMore = notifier.hasMore;
+    final showLoadMore = (hasMore && venues.isNotEmpty) || isLoadingMore;
+    final itemCount = venues.length + (showLoadMore ? 1 : 0);
+    final showErrorBanner = failure != null;
+
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(venueNotifierProvider.future).then((_) {}),
+      child: ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (showErrorBanner)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _ErrorBanner(
+                message: failure!.message,
+                onDismiss: () => ref.invalidate(venueNotifierProvider),
+              ),
+            ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.78,
+            ),
+            itemCount: itemCount,
+            itemBuilder: (context, index) {
+              if (index >= venues.length) {
+                return const _LoadMoreCard();
+              }
+              final venue = venues[index];
+              return _VenueCard(
+                venue: venue,
+                priceFormat: _priceFormat,
+                onTap: () => widget.onVenueTap?.call(venue),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -629,30 +452,6 @@ class _ImagePlaceholder extends StatelessWidget {
     );
   }
 }
-
-String _capitalize(String value) {
-  if (value.isEmpty) {
-    return value;
-  }
-  return value[0].toUpperCase() + value.substring(1);
-}
-
-const Map<String, List<String>> _cuisineOptions = {
-  'food': [
-    'европейская',
-    'итальянская',
-    'азиатская',
-    'японская',
-    'фастфуд',
-    'здоровая',
-  ],
-  'flowers': [
-    'классическая',
-    'свадебная',
-    'сезонная',
-    'уютная',
-  ],
-};
 
 List<VenueModel> _extractVenues(AsyncValue<List<VenueModel>> value) {
   if (value is AsyncData<List<VenueModel>>) {
