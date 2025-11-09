@@ -5,24 +5,43 @@ part 'review_model.g.dart';
 @JsonSerializable()
 class ReviewModel {
   const ReviewModel({
-    required this.id,
+    this.id,
     required this.orderId,
-    required this.venueId,
-    required this.userId,
+    this.venueId,
+    this.userId,
     required this.stars,
     this.text,
     this.photoUrls = const <String>[],
-    required this.createdAt,
+    this.createdAt,
+    this.userName,
+    this.userAvatarUrl,
   });
 
-  final String id;
+  @JsonKey(includeIfNull: false)
+  final String? id;
   final String orderId;
-  final String venueId;
-  final String userId;
+  @JsonKey(includeIfNull: false)
+  final String? venueId;
+  @JsonKey(includeIfNull: false)
+  final String? userId;
   final int stars;
+  @JsonKey(includeIfNull: false)
   final String? text;
+  @JsonKey(defaultValue: <String>[])
   final List<String> photoUrls;
-  final DateTime createdAt;
+  @JsonKey(
+    includeIfNull: false,
+    fromJson: _dateTimeFromJson,
+    toJson: _dateTimeToJson,
+  )
+  final DateTime? createdAt;
+  @JsonKey(includeIfNull: false)
+  final String? userName;
+  @JsonKey(includeIfNull: false)
+  final String? userAvatarUrl;
+
+  bool get hasText => (text ?? '').trim().isNotEmpty;
+  bool get hasPhotos => photoUrls.isNotEmpty;
 
   ReviewModel copyWith({
     String? id,
@@ -33,6 +52,8 @@ class ReviewModel {
     String? text,
     List<String>? photoUrls,
     DateTime? createdAt,
+    String? userName,
+    String? userAvatarUrl,
   }) {
     return ReviewModel(
       id: id ?? this.id,
@@ -43,6 +64,8 @@ class ReviewModel {
       text: text ?? this.text,
       photoUrls: photoUrls ?? this.photoUrls,
       createdAt: createdAt ?? this.createdAt,
+      userName: userName ?? this.userName,
+      userAvatarUrl: userAvatarUrl ?? this.userAvatarUrl,
     );
   }
 
@@ -50,4 +73,22 @@ class ReviewModel {
       _$ReviewModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$ReviewModelToJson(this);
+
+  static DateTime? _dateTimeFromJson(dynamic value) {
+    if (value is DateTime) {
+      return value;
+    }
+    if (value is int) {
+      // Assume timestamp in milliseconds.
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
+  static dynamic _dateTimeToJson(DateTime? dateTime) {
+    return dateTime?.toIso8601String();
+  }
 }
