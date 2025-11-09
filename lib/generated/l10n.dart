@@ -169,6 +169,7 @@ class S {
   String get overviewTab => _t('overviewTab');
   String get menuTab => _t('menuTab');
   String get catalogTab => _t('catalogTab');
+  String get otherCategory => _t('otherCategory');
   String get workingHours => _t('workingHours');
   String get contactInfo => _t('contactInfo');
   String get reviews => _t('reviews');
@@ -344,9 +345,10 @@ const Map<String, String> _ruValues = <String, String>{
   'clearFilters': 'Очистить',
   'noVenuesFound': 'Ничего не найдено',
   'cachedVenuesMessage': 'Показаны данные из кеша',
-  'overviewTab': 'Обзор',
-  'menuTab': 'Меню',
-  'catalogTab': 'Каталог',
+    'overviewTab': 'Обзор',
+    'menuTab': 'Меню',
+    'catalogTab': 'Каталог',
+    'otherCategory': 'Прочее',
   'workingHours': 'Часы работы',
   'contactInfo': 'Контакты',
   'reviews': 'Отзывы',
@@ -498,9 +500,10 @@ const Map<String, String> _enValues = <String, String>{
   'clearFilters': 'Clear',
   'noVenuesFound': 'No venues found',
   'cachedVenuesMessage': 'Showing cached data',
-  'overviewTab': 'Overview',
-  'menuTab': 'Menu',
-  'catalogTab': 'Catalog',
+    'overviewTab': 'Overview',
+    'menuTab': 'Menu',
+    'catalogTab': 'Catalog',
+    'otherCategory': 'Other',
   'workingHours': 'Working hours',
   'contactInfo': 'Contacts',
   'reviews': 'Reviews',

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../generated/l10n.dart';
@@ -32,10 +33,13 @@ class HomeTab extends ConsumerWidget {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            VenueList(type: 'food'),
-            FlowerCatalog(),
+            VenueList(
+              type: 'food',
+              onVenueTap: (venue) => context.go('/venue/${venue.id}'),
+            ),
+            const FlowerCatalog(),
           ],
         ),
       ),

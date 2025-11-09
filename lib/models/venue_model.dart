@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'address_model.dart';
+import 'product_model.dart';
 
 part 'venue_model.g.dart';
 
@@ -22,6 +23,9 @@ class VenueModel {
     this.description,
     this.isOpen = true,
     this.hours = const <String, String>{},
+    this.contacts = const <String, String>{},
+    this.menu = const <ProductModel>[],
+    this.catalog = const <ProductModel>[],
   });
 
   final String id;
@@ -46,6 +50,12 @@ class VenueModel {
   final bool isOpen;
   @JsonKey(defaultValue: <String, String>{}, fromJson: _stringMapFromJson)
   final Map<String, String> hours;
+  @JsonKey(defaultValue: <String, String>{}, fromJson: _stringMapFromJson)
+  final Map<String, String> contacts;
+  @JsonKey(defaultValue: <ProductModel>[], fromJson: _productListFromJson)
+  final List<ProductModel> menu;
+  @JsonKey(defaultValue: <ProductModel>[], fromJson: _productListFromJson)
+  final List<ProductModel> catalog;
 
   VenueModel copyWith({
     String? id,
@@ -61,6 +71,9 @@ class VenueModel {
     String? description,
     bool? isOpen,
     Map<String, String>? hours,
+    Map<String, String>? contacts,
+    List<ProductModel>? menu,
+    List<ProductModel>? catalog,
   }) {
     return VenueModel(
       id: id ?? this.id,
@@ -76,6 +89,9 @@ class VenueModel {
       description: description ?? this.description,
       isOpen: isOpen ?? this.isOpen,
       hours: hours ?? this.hours,
+      contacts: contacts ?? this.contacts,
+      menu: menu ?? this.menu,
+      catalog: catalog ?? this.catalog,
     );
   }
 
@@ -117,5 +133,18 @@ class VenueModel {
         json['deliveryTime'] ??
         json['delivery_time'] ??
         '';
+  }
+
+  static List<ProductModel> _productListFromJson(dynamic value) {
+    if (value is List) {
+      return value
+          .map(
+            (dynamic item) => ProductModel.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    }
+    return const <ProductModel>[];
   }
 }
