@@ -7,10 +7,10 @@ import '../../../core/errors/failure.dart';
 import '../../../generated/l10n.dart';
 import '../../../models/address_model.dart';
 import '../../../models/cart_item_model.dart';
-import '../../../widgets/app_button.dart';
 import '../../address/providers/address_notifier.dart';
 import '../../home/providers/home_providers.dart';
 import '../providers/checkout_notifier.dart';
+import '../widgets/payment_form.dart';
 
 class CheckoutScreen extends HookConsumerWidget {
   const CheckoutScreen({super.key});
@@ -85,9 +85,6 @@ class CheckoutScreen extends HookConsumerWidget {
     final total = checkoutState.order.total +
         checkoutState.order.deliveryFee +
         checkoutState.order.cashFee;
-    final isButtonEnabled =
-        termsAccepted.value && checkoutState.canSubmit && !checkoutState.isPlacing;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.checkoutTitle),
@@ -166,59 +163,34 @@ class CheckoutScreen extends HookConsumerWidget {
                       _EmptyCartPlaceholder(message: l10n.emptyCart)
                     else
                       _OrderSummaryList(items: items),
-                    const SizedBox(height: 16),
-                    _SummaryTotals(
-                      total: total,
-                      deliveryFee: checkoutState.order.deliveryFee,
-                      cashFee: checkoutState.order.cashFee,
-                      l10n: l10n,
-                    ),
-                    const SizedBox(height: 24),
-                    _EtaSection(
-                      etaLabel: checkoutState.etaLabel,
-                      l10n: l10n,
-                    ),
-                    const SizedBox(height: 24),
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: termsAccepted.value,
-                      onChanged: (value) {
-                        termsAccepted.value = value ?? false;
-                      },
-                      title: Text(
-                        l10n.termsAcceptance,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const SizedBox(height: 16),
+                      _SummaryTotals(
+                        total: total,
+                        deliveryFee: checkoutState.order.deliveryFee,
+                        cashFee: checkoutState.order.cashFee,
+                        l10n: l10n,
                       ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                    ),
+                      const SizedBox(height: 24),
+                      _EtaSection(
+                        etaLabel: checkoutState.etaLabel,
+                        l10n: l10n,
+                      ),
+                      const SizedBox(height: 24),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: termsAccepted.value,
+                        onChanged: (value) {
+                          termsAccepted.value = value ?? false;
+                        },
+                        title: Text(
+                          l10n.termsAcceptance,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                      PaymentForm(termsAccepted: termsAccepted.value),
                   ],
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: AppButton(
-                label: l10n.placeOrder,
-                isLoading: checkoutState.isPlacing,
-                onPressed: isButtonEnabled
-                    ? () async {
-                        if (!formKey.currentState!.validate()) {
-                          return;
-                        }
-                        final failure = await ref
-                            .read(checkoutProvider.notifier)
-                            .placeOrder(etaLabel: checkoutState.etaLabel);
-                        if (failure != null) {
-                          return;
-                        }
-                        if (!context.mounted) {
-                          return;
-                        }
-                        _showSnackBar(context, l10n.orderPlaced);
-                        ref.read(navProvider.notifier).state = 2;
-                        context.go('/');
-                      }
-                    : null,
               ),
             ),
           ],
