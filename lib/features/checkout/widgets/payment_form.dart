@@ -307,22 +307,21 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
       return;
     }
 
-    if (isCash) {
-      final failure = await ref.read(checkoutProvider.notifier).placeOrder(
-            etaLabel: checkoutState.etaLabel,
-          );
-      if (failure != null) {
-        _showMessage(failure.message);
+      if (isCash) {
+        final failure = await ref.read(checkoutProvider.notifier).placeOrder(
+              etaLabel: checkoutState.etaLabel,
+            );
+        if (failure != null) {
+          _showMessage(failure.message);
+          return;
+        }
+        if (!context.mounted) {
+          return;
+        }
+        _showMessage(l10n.orderPlaced);
+        _navigateToOrderStatus();
         return;
       }
-      if (!context.mounted) {
-        return;
-      }
-      _showMessage(l10n.orderPlaced);
-      ref.read(navProvider.notifier).state = 2;
-      context.go('/');
-      return;
-    }
 
     await _handleCardPayment(
       methods: methods,
@@ -382,8 +381,7 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
       return;
     }
     _showMessage(l10n.orderPlaced);
-    ref.read(navProvider.notifier).state = 2;
-    context.go('/');
+    _navigateToOrderStatus();
   }
 
   void _onPaymentMethodToggle(bool selectCash) {
@@ -393,6 +391,17 @@ class _PaymentFormState extends ConsumerState<PaymentForm> {
       checkoutNotifier.updateCashInstructions(_cashController.text);
     }
     ref.read(paymentNotifierProvider.notifier).clearError();
+  }
+
+  void _navigateToOrderStatus() {
+    final orderId = ref.read(checkoutProvider).order.id.trim();
+    ref.read(navProvider.notifier).state = 2;
+    if (orderId.isEmpty) {
+      context.go('/');
+      return;
+    }
+    final encodedId = Uri.encodeComponent(orderId);
+    context.go('/orders/$encodedId/status');
   }
 
   void _showMessage(String message) {

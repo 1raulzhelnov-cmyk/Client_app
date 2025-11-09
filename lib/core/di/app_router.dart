@@ -13,6 +13,7 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/otp_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/home/screens/home_screen.dart';
+import '../../features/orders/screens/order_status_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/venue/screens/venue_detail_screen.dart';
@@ -75,34 +76,44 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/addresses',
         builder: (context, state) => const AddressListScreen(),
       ),
-      GoRoute(
-        path: '/addresses/add',
-        builder: (context, state) => const AddAddressScreen(),
-      ),
-      GoRoute(
-        path: '/addresses/edit',
-        builder: (context, state) {
-          final extra = state.extra;
-          if (extra is! AddressModel) {
-            return const AddressListScreen();
-          }
-          return EditAddressScreen(address: extra);
-        },
-      ),
-      GoRoute(
-        path: '/checkout',
-        builder: (context, state) => const CheckoutScreen(),
-      ),
-      GoRoute(
-        path: '/venue/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id'];
-          if (id == null || id.isEmpty) {
-            return const HomeScreen();
-          }
-          return VenueDetailScreen(venueId: id);
-        },
-      ),
+        GoRoute(
+          path: '/addresses/add',
+          builder: (context, state) => const AddAddressScreen(),
+        ),
+        GoRoute(
+          path: '/addresses/edit',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is! AddressModel) {
+              return const AddressListScreen();
+            }
+            return EditAddressScreen(address: extra);
+          },
+        ),
+        GoRoute(
+          path: '/checkout',
+          builder: (context, state) => const CheckoutScreen(),
+        ),
+        GoRoute(
+          path: '/venue/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id'];
+            if (id == null || id.isEmpty) {
+              return const HomeScreen();
+            }
+            return VenueDetailScreen(venueId: id);
+          },
+        ),
+        GoRoute(
+          path: '/orders/:id/status',
+          builder: (context, state) {
+            final id = state.pathParameters['id'];
+            if (id == null || id.isEmpty) {
+              return const HomeScreen();
+            }
+            return OrderStatusScreen(orderId: id);
+          },
+        ),
     ],
     redirect: (context, state) {
       final location = state.matchedLocation;
