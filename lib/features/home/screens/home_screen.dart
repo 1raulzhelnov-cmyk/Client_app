@@ -6,7 +6,7 @@ import '../../auth/providers/auth_notifier.dart';
 import '../providers/home_providers.dart';
 import '../../cart/screens/cart_screen.dart';
 import 'home_tab.dart';
-import 'orders_screen.dart';
+import '../../orders/screens/orders_history_screen.dart';
 import 'profile_tab.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -22,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
     final tabs = <Widget>[
       const HomeTab(),
       const CartScreen(),
-      const OrdersScreen(),
+      const OrdersHistoryScreen(),
       const ProfileTab(),
     ];
 
