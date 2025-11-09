@@ -14,6 +14,7 @@ import '../../features/auth/screens/otp_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/orders/screens/order_status_screen.dart';
+import '../../features/orders/screens/orders_history_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/venue/screens/venue_detail_screen.dart';
@@ -34,48 +35,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   ref.onDispose(refreshListenable.dispose);
 
-  return GoRouter(
-    navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
-    routes: <RouteBase>[
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginScreen(),
-      ),
-      GoRoute(
-        path: '/register',
-        builder: (context, state) => const RegisterScreen(),
-      ),
-      GoRoute(
-        path: '/otp',
-        builder: (context, state) {
-          final extra = state.extra;
-          if (extra is! OtpScreenArgs) {
-            return const LoginScreen();
-          }
-          return OtpScreen(args: extra);
-        },
-      ),
-      GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
-        path: '/home',
-        redirect: (context, state) => '/',
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: '/profile/edit',
-        builder: (context, state) => const EditProfileScreen(),
-      ),
-      GoRoute(
-        path: '/addresses',
-        builder: (context, state) => const AddressListScreen(),
-      ),
+    return GoRouter(
+      navigatorKey: _rootNavigatorKey,
+      initialLocation: '/',
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterScreen(),
+        ),
+        GoRoute(
+          path: '/otp',
+          builder: (context, state) {
+            final extra = state.extra;
+            if (extra is! OtpScreenArgs) {
+              return const LoginScreen();
+            }
+            return OtpScreen(args: extra);
+          },
+        ),
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/home',
+          redirect: (context, state) => '/',
+        ),
+        GoRoute(
+          path: '/profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/profile/edit',
+          builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/addresses',
+          builder: (context, state) => const AddressListScreen(),
+        ),
         GoRoute(
           path: '/addresses/add',
           builder: (context, state) => const AddAddressScreen(),
@@ -93,6 +94,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         GoRoute(
           path: '/checkout',
           builder: (context, state) => const CheckoutScreen(),
+        ),
+        GoRoute(
+          path: '/orders/history',
+          builder: (context, state) => const OrdersHistoryScreen(),
         ),
         GoRoute(
           path: '/venue/:id',
@@ -114,16 +119,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             return OrderStatusScreen(orderId: id);
           },
         ),
-    ],
-    redirect: (context, state) {
-      final location = state.matchedLocation;
-      return resolveAuthRedirect(
-        location: location,
-        authState: authState,
-      );
-    },
-    refreshListenable: refreshListenable,
-  );
+      ],
+      redirect: (context, state) {
+        final location = state.matchedLocation;
+        return resolveAuthRedirect(
+          location: location,
+          authState: authState,
+        );
+      },
+      refreshListenable: refreshListenable,
+    );
 });
 
 String? resolveAuthRedirect({
