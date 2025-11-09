@@ -123,19 +123,30 @@ class S {
   String get confirmDeletionTitle => _t('confirmDeletionTitle');
   String get confirmDeletionMessage => _t('confirmDeletionMessage');
 
-  // Addresses
-  String get addressesTitle => _t('addressesTitle');
-  String get addAddress => _t('addAddress');
-  String get editAddress => _t('editAddress');
-  String get deleteAddress => _t('deleteAddress');
-  String get addressInstructions => _t('addressInstructions');
-  String get searchAddress => _t('searchAddress');
-  String get selectOnMap => _t('selectOnMap');
-  String get primaryAddress => _t('primaryAddress');
-  String get addressSaved => _t('addressSaved');
-  String get addressDeleted => _t('addressDeleted');
+    // Addresses
+    String get addressesTitle => _t('addressesTitle');
+    String get addAddress => _t('addAddress');
+    String get editAddress => _t('editAddress');
+    String get deleteAddress => _t('deleteAddress');
+    String get addressInstructions => _t('addressInstructions');
+    String get searchAddress => _t('searchAddress');
+    String get selectOnMap => _t('selectOnMap');
+    String get primaryAddress => _t('primaryAddress');
+    String get addressSaved => _t('addressSaved');
+    String get addressDeleted => _t('addressDeleted');
+    String get addressListEmpty => _t('addressListEmpty');
+    String get addressNoInstructions => _t('addressNoInstructions');
+    String get addressSearchPlaceholder => _t('addressSearchPlaceholder');
+    String get addressSuggestionsEmpty => _t('addressSuggestionsEmpty');
+    String get addressMapHint => _t('addressMapHint');
+    String get addressInstructionsHint => _t('addressInstructionsHint');
+    String get addressSaveButton => _t('addressSaveButton');
+    String get addressUpdateButton => _t('addressUpdateButton');
+    String get addressLocationRequired => _t('addressLocationRequired');
+    String get addressUpdated => _t('addressUpdated');
+    String get addressCoordinatesError => _t('addressCoordinatesError');
 
-  // Navigation / Home
+    // Navigation / Home
   String get home => _t('home');
   String get cart => _t('cart');
   String get orders => _t('orders');
@@ -304,7 +315,18 @@ const Map<String, String> _ruValues = <String, String>{
   'selectOnMap': 'Выбрать на карте',
   'primaryAddress': 'Адрес по умолчанию',
   'addressSaved': 'Адрес сохранён',
-  'addressDeleted': 'Адрес удалён',
+    'addressDeleted': 'Адрес удалён',
+    'addressListEmpty': 'Пока нет сохранённых адресов',
+    'addressNoInstructions': 'Инструкции отсутствуют',
+    'addressSearchPlaceholder': 'Начните вводить адрес',
+    'addressSuggestionsEmpty': 'Нет подсказок',
+    'addressMapHint': 'Выберите адрес, чтобы отобразить точку на карте',
+    'addressInstructionsHint': 'Например: домофон 123, курьеру звонить',
+    'addressSaveButton': 'Сохранить адрес',
+    'addressUpdateButton': 'Обновить адрес',
+    'addressLocationRequired': 'Выберите адрес на карте',
+    'addressUpdated': 'Адрес обновлён',
+    'addressCoordinatesError': 'Не удалось получить координаты выбранного адреса',
   'home': 'Главная',
   'cart': 'Корзина',
   'orders': 'Заказы',
@@ -446,7 +468,19 @@ const Map<String, String> _enValues = <String, String>{
   'selectOnMap': 'Select on map',
   'primaryAddress': 'Default address',
   'addressSaved': 'Address saved',
-  'addressDeleted': 'Address deleted',
+    'addressDeleted': 'Address deleted',
+    'addressListEmpty': 'No saved addresses yet',
+    'addressNoInstructions': 'No instructions',
+    'addressSearchPlaceholder': 'Start typing an address',
+    'addressSuggestionsEmpty': 'No suggestions',
+    'addressMapHint': 'Select an address to preview it on the map',
+    'addressInstructionsHint': 'e.g. call on arrival, code 123',
+    'addressSaveButton': 'Save address',
+    'addressUpdateButton': 'Update address',
+    'addressLocationRequired': 'Please select an address on the map',
+    'addressUpdated': 'Address updated',
+    'addressCoordinatesError':
+        'Unable to retrieve coordinates for the selected place',
   'home': 'Home',
   'cart': 'Cart',
   'orders': 'Orders',
