@@ -153,6 +153,20 @@ class S {
   String get profile => _t('profile');
   String get food => _t('food');
   String get flowers => _t('flowers');
+  String get flowerCatalogTitle => _t('flowerCatalogTitle');
+  String get flowerCatalogSubtitle => _t('flowerCatalogSubtitle');
+  String get flowerOccasionBirthday => _t('flowerOccasionBirthday');
+  String get flowerOccasionWedding => _t('flowerOccasionWedding');
+  String get flowerOccasionSeasonal => _t('flowerOccasionSeasonal');
+  String get flowerOccasionAnniversary => _t('flowerOccasionAnniversary');
+  String get flowerOccasionCelebration => _t('flowerOccasionCelebration');
+  String get flowerSeasonalSubtitle => _t('flowerSeasonalSubtitle');
+  String get flowerSeasonSpring => _t('flowerSeasonSpring');
+  String get flowerSeasonSummer => _t('flowerSeasonSummer');
+  String get flowerSeasonAutumn => _t('flowerSeasonAutumn');
+  String get flowerSeasonWinter => _t('flowerSeasonWinter');
+  String get flowerEmptyState => _t('flowerEmptyState');
+  String get flowerErrorState => _t('flowerErrorState');
   String get searchPlaceholder => _t('searchPlaceholder');
   String get filterTitle => _t('filterTitle');
   String get sortTitle => _t('sortTitle');
@@ -334,6 +348,20 @@ const Map<String, String> _ruValues = <String, String>{
   'profile': 'Профиль',
   'food': 'Еда',
   'flowers': 'Цветы',
+  'flowerCatalogTitle': 'Каталог цветов',
+  'flowerCatalogSubtitle': 'Смотрите букеты по поводам и сезонам',
+  'flowerOccasionBirthday': 'День рождения',
+  'flowerOccasionWedding': 'Свадьба',
+  'flowerOccasionSeasonal': 'Сезонные',
+  'flowerOccasionAnniversary': 'Годовщина',
+  'flowerOccasionCelebration': 'Праздник',
+  'flowerSeasonalSubtitle': 'Выберите сезонную коллекцию',
+  'flowerSeasonSpring': 'Весна',
+  'flowerSeasonSummer': 'Лето',
+  'flowerSeasonAutumn': 'Осень',
+  'flowerSeasonWinter': 'Зима',
+  'flowerEmptyState': 'Нет букетов для выбранных параметров',
+  'flowerErrorState': 'Не удалось загрузить каталог цветов. Попробуйте ещё раз.',
   'searchPlaceholder': 'Поиск по меню и магазинам',
   'filterTitle': 'Фильтры',
   'sortTitle': 'Сортировка',
@@ -489,6 +517,20 @@ const Map<String, String> _enValues = <String, String>{
   'profile': 'Profile',
   'food': 'Food',
   'flowers': 'Flowers',
+  'flowerCatalogTitle': 'Flower catalog',
+  'flowerCatalogSubtitle': 'Browse bouquets by occasion and season',
+  'flowerOccasionBirthday': 'Birthday',
+  'flowerOccasionWedding': 'Wedding',
+  'flowerOccasionSeasonal': 'Seasonal',
+  'flowerOccasionAnniversary': 'Anniversary',
+  'flowerOccasionCelebration': 'Celebration',
+  'flowerSeasonalSubtitle': 'Select a seasonal collection',
+  'flowerSeasonSpring': 'Spring',
+  'flowerSeasonSummer': 'Summer',
+  'flowerSeasonAutumn': 'Autumn',
+  'flowerSeasonWinter': 'Winter',
+  'flowerEmptyState': 'No bouquets found for this selection',
+  'flowerErrorState': "We couldn't load the flower catalog. Try again.",
   'searchPlaceholder': 'Search menu and stores',
   'filterTitle': 'Filters',
   'sortTitle': 'Sorting',

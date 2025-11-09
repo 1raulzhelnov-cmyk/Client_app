@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../generated/l10n.dart';
-import '../widgets/flower_catalog.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/venue_list.dart';
+import '../../flowers/screens/flower_catalog_screen.dart';
 
 class HomeTab extends ConsumerWidget {
   const HomeTab({super.key});
@@ -39,7 +39,7 @@ class HomeTab extends ConsumerWidget {
               type: 'food',
               onVenueTap: (venue) => context.go('/venue/${venue.id}'),
             ),
-            const FlowerCatalog(),
+            const FlowerCatalogScreen(),
           ],
         ),
       ),
