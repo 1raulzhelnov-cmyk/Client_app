@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../core/errors/failure.dart';
@@ -109,13 +110,7 @@ class CartScreen extends ConsumerWidget {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: AppButton(
                     label: l10n.checkout,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(
-                          SnackBar(content: Text(l10n.errorGeneric)),
-                        );
-                    },
+                    onPressed: () => context.push('/checkout'),
                   ),
                 ),
               ],
