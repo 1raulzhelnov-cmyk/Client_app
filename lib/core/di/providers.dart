@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/api/api_service.dart';
+import '../../services/auth/auth_service.dart';
 import '../config/env.dart';
 
 class AppState {
@@ -34,6 +35,15 @@ final apiServiceProvider = Provider<ApiService>((ref) {
     client: client,
     firebaseAuth: auth,
     baseUrl: env.apiBaseUrl,
+  );
+});
+
+final authServiceProvider = Provider<AuthService>((ref) {
+  final firebaseAuth = ref.watch(firebaseAuthProvider);
+  final apiService = ref.watch(apiServiceProvider);
+  return AuthService(
+    firebaseAuth: firebaseAuth,
+    apiService: apiService,
   );
 });
 
