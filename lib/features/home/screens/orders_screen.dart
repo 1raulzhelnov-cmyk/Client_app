@@ -192,6 +192,8 @@ class _OrderCard extends StatelessWidget {
       case OrderStatus.confirmed:
       case OrderStatus.transit:
         return colorScheme.secondary;
+      case OrderStatus.cancelled:
+        return colorScheme.error;
       case OrderStatus.placed:
       default:
         return colorScheme.tertiary;

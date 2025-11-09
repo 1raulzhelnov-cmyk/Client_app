@@ -11,6 +11,7 @@ enum OrderStatus {
   preparing,
   transit,
   delivered,
+  cancelled,
 }
 
 @JsonSerializable(explicitToJson: true)
@@ -51,7 +52,23 @@ class OrderModel {
 
   double get grandTotal => total + deliveryFee + cashFee;
 
-  double get statusProgress => (status.index + 1) / OrderStatus.values.length;
+  double get statusProgress {
+    if (status == OrderStatus.cancelled) {
+      return 0;
+    }
+    const progression = <OrderStatus>[
+      OrderStatus.placed,
+      OrderStatus.confirmed,
+      OrderStatus.preparing,
+      OrderStatus.transit,
+      OrderStatus.delivered,
+    ];
+    final index = progression.indexOf(status);
+    if (index == -1) {
+      return 0;
+    }
+    return (index + 1) / progression.length;
+  }
 
   OrderModel copyWith({
     String? id,

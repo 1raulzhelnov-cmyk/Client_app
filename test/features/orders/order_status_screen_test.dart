@@ -48,38 +48,37 @@ void main() {
     );
   }
 
-  testWidgets('показывает прогресс в соответствии со статусом заказа',
-      (tester) async {
-    final order = buildOrder(OrderStatus.preparing);
-    final mockService = MockFirestoreService();
+    testWidgets(
+        'показывает прогресс в соответствии со статусом заказа', (tester) async {
+      final order = buildOrder(OrderStatus.preparing);
+      final mockService = MockFirestoreService();
 
-    when(mockService.getOrderStream(order.id)).thenAnswer(
-      (_) => Stream.value(order),
-    );
+      when(mockService.getOrderStream(order.id)).thenAnswer(
+        (_) => Stream.value(order),
+      );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          firestoreServiceProvider.overrideWithValue(mockService),
-        ],
-        child: MaterialApp(
-          locale: const Locale('ru'),
-          localizationsDelegates: S.localizationsDelegates,
-          supportedLocales: S.supportedLocales,
-          home: OrderStatusScreen(orderId: order.id),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            firestoreServiceProvider.overrideWithValue(mockService),
+          ],
+          child: MaterialApp(
+            locale: const Locale('ru'),
+            localizationsDelegates: S.localizationsDelegates,
+            supportedLocales: S.supportedLocales,
+            home: OrderStatusScreen(orderId: order.id),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    final indicatorFinder = find.byType(LinearProgressIndicator).first;
-    final indicator =
-        tester.widget<LinearProgressIndicator>(indicatorFinder);
-    final expectedProgress =
-        (OrderStatus.preparing.index + 1) / OrderStatus.values.length;
+      final indicatorFinder = find.byType(LinearProgressIndicator).first;
+      final indicator =
+          tester.widget<LinearProgressIndicator>(indicatorFinder);
+      final expectedProgress = order.statusProgress;
 
-    expect(indicator.value, closeTo(expectedProgress, 1e-9));
-    expect(find.textContaining('#${order.id}'), findsOneWidget);
-  });
+      expect(indicator.value, closeTo(expectedProgress, 1e-9));
+      expect(find.textContaining('#${order.id}'), findsOneWidget);
+    });
 }

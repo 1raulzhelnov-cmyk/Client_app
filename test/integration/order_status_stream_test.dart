@@ -96,5 +96,27 @@ void main() {
         emitsInOrder([initialOrder, updatedOrder]),
       );
     });
+
+      test('поддерживает переход заказа в статус отмены', () async {
+        final initialOrder = buildOrder(
+          id: orderId,
+          status: OrderStatus.confirmed,
+        );
+        final cancelledOrder =
+            initialOrder.copyWith(status: OrderStatus.cancelled);
+
+        final stream = container.read(orderStatusProvider(orderId).stream);
+
+        scheduleMicrotask(() {
+          controller
+            ..add(initialOrder)
+            ..add(cancelledOrder);
+        });
+
+        await expectLater(
+          stream,
+          emitsInOrder([initialOrder, cancelledOrder]),
+        );
+      });
   });
 }

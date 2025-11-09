@@ -342,5 +342,7 @@ String _statusLabel(OrderStatus status, S l10n) {
       return l10n.statusTransit;
     case OrderStatus.delivered:
       return l10n.statusDelivered;
+    case OrderStatus.cancelled:
+      return l10n.statusCancelled;
   }
 }
