@@ -5,7 +5,7 @@ import 'product_model.dart';
 
 part 'flower_model.g.dart';
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, includeIfNull: false)
 class FlowerModel extends ProductModel {
   const FlowerModel({
     required super.id,
@@ -17,8 +17,11 @@ class FlowerModel extends ProductModel {
     super.available,
     super.category,
     super.customizations = const [],
+    @JsonKey(readValue: _readOccasion)
     this.occasion,
+    @JsonKey(readValue: _readSeason)
     this.season,
+    @JsonKey(readValue: _readCareInstructions)
     this.careInstructions,
   }) : super(type: ProductType.flower);
 
@@ -63,4 +66,26 @@ class FlowerModel extends ProductModel {
 
   @override
   Map<String, dynamic> toJson() => _$FlowerModelToJson(this);
+
+  static Object? _readOccasion(Map<dynamic, dynamic> json, String key) {
+    return json['occasion'] ??
+        json['occasionType'] ??
+        json['occasion_name'] ??
+        json['event'] ??
+        json['category'];
+  }
+
+  static Object? _readSeason(Map<dynamic, dynamic> json, String key) {
+    return json['season'] ??
+        json['seasonName'] ??
+        json['seasonal'] ??
+        json['collection'];
+  }
+
+  static Object? _readCareInstructions(Map<dynamic, dynamic> json, String key) {
+    return json['careInstructions'] ??
+        json['care'] ??
+        json['care_notes'] ??
+        json['instructions'];
+  }
 }
