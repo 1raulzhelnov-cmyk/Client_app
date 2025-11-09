@@ -16,6 +16,7 @@ import '../../features/home/screens/home_screen.dart';
 import '../../features/profile/screens/edit_profile_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/venue/screens/venue_detail_screen.dart';
+import '../../features/checkout/screens/checkout_screen.dart';
 import '../../models/address_model.dart';
 import '../../models/user_model.dart';
 import '../di/providers.dart';
@@ -87,6 +88,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           return EditAddressScreen(address: extra);
         },
+      ),
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => const CheckoutScreen(),
       ),
       GoRoute(
         path: '/venue/:id',
