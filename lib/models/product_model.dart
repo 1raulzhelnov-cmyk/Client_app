@@ -24,12 +24,22 @@ class ProductModel {
   final String id;
   final String venueId;
   final String name;
+  @JsonKey(readValue: _readDescription, defaultValue: '')
   final String description;
+  @JsonKey(fromJson: _priceFromJson, toJson: _priceToJson)
   final double price;
+  @JsonKey(readValue: _readImageUrl, defaultValue: '')
   final String imageUrl;
+  @JsonKey(fromJson: _boolFromJson, defaultValue: true)
   final bool available;
+  @JsonKey(readValue: _readCategory)
   final String? category;
+  @JsonKey(name: 'type', unknownEnumValue: ProductType.food)
   final ProductType type;
+  @JsonKey(
+    defaultValue: <CustomizationOption>[],
+    fromJson: _customizationsFromJson,
+  )
   final List<CustomizationOption> customizations;
 
   ProductModel copyWith({
@@ -62,4 +72,78 @@ class ProductModel {
       _$ProductModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$ProductModelToJson(this);
+
+  static Object? _readDescription(Map<dynamic, dynamic> json, String key) {
+    return json['description'] ??
+        json['desc'] ??
+        json['shortDescription'] ??
+        json['details'] ??
+        '';
+  }
+
+  static Object? _readImageUrl(Map<dynamic, dynamic> json, String key) {
+    return json['imageUrl'] ??
+        json['image'] ??
+        json['image_url'] ??
+        json['photo'] ??
+        '';
+  }
+
+  static Object? _readCategory(Map<dynamic, dynamic> json, String key) {
+    return json['category'] ??
+        json['categoryName'] ??
+        json['group'] ??
+        json['section'];
+  }
+
+  static double _priceFromJson(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value.replaceAll(',', '.')) ?? 0;
+    }
+    return 0;
+  }
+
+  static double _priceToJson(double value) => value;
+
+  static bool _boolFromJson(dynamic value) {
+    if (value is bool) {
+      return value;
+    }
+    if (value is num) {
+      return value != 0;
+    }
+    if (value is String) {
+      return value.toLowerCase() == 'true' || value == '1';
+    }
+    return true;
+  }
+
+  static List<CustomizationOption> _customizationsFromJson(dynamic value) {
+    if (value is List) {
+      return value
+          .map(
+            (dynamic item) => CustomizationOption.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    }
+    if (value is Map) {
+      // Иногда бэкенд возвращает словарь с группами.
+      return value.values
+          .whereType<List>()
+          .expand((options) => options)
+          .whereType<Map>()
+          .map(
+            (dynamic item) => CustomizationOption.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+    }
+    return const <CustomizationOption>[];
+  }
 }

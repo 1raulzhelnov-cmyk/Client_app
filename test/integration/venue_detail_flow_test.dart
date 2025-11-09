@@ -69,7 +69,32 @@ void main() {
       'pagination': <String, dynamic>{'hasNext': false},
     };
 
-    final venueDetailResponse = <String, dynamic>{
+      final productsResponse = [
+        <String, dynamic>{
+          'id': 'soup-1',
+          'venueId': 'venue-1',
+          'name': 'Сливочный суп',
+          'description': 'Грибной крем-суп с сухариками',
+          'price': 320,
+          'imageUrl': '',
+          'available': true,
+          'category': 'Супы',
+          'type': 'food',
+        },
+        <String, dynamic>{
+          'id': 'main-1',
+          'venueId': 'venue-1',
+          'name': 'Стейк из индейки',
+          'description': 'Подаётся с картофельным пюре',
+          'price': 540,
+          'imageUrl': '',
+          'available': true,
+          'category': 'Горячее',
+          'type': 'food',
+        },
+      ];
+
+      final venueDetailResponse = <String, dynamic>{
       'id': 'venue-1',
       'name': 'Test Bistro',
       'type': 'food',
@@ -97,30 +122,7 @@ void main() {
         'phone': '+7 495 111-11-11',
         'instagram': '@testbistro',
       },
-      'menu': [
-        <String, dynamic>{
-          'id': 'soup-1',
-          'venueId': 'venue-1',
-          'name': 'Сливочный суп',
-          'description': 'Грибной крем-суп с сухариками',
-          'price': 320,
-          'imageUrl': '',
-          'available': true,
-          'category': 'Супы',
-          'type': 'food',
-        },
-        <String, dynamic>{
-          'id': 'main-1',
-          'venueId': 'venue-1',
-          'name': 'Стейк из индейки',
-          'description': 'Подаётся с картофельным пюре',
-          'price': 540,
-          'imageUrl': '',
-          'available': true,
-          'category': 'Горячее',
-          'type': 'food',
-        },
-      ],
+        'menu': productsResponse,
     };
 
     when(
@@ -138,6 +140,12 @@ void main() {
       }
       return right(<String, dynamic>{});
     });
+      when(
+        apiService.get<dynamic>(
+          '/products',
+          queryParameters: anyNamed('queryParameters'),
+        ),
+      ).thenAnswer((_) async => right(productsResponse));
 
     const user = UserModel(
       id: 'user-1',
@@ -172,15 +180,29 @@ void main() {
     expect(find.text('+7 495 111-11-11'), findsOneWidget);
     expect(find.text('Супы'), findsOneWidget);
     expect(find.text('Горячее'), findsOneWidget);
+      await tester.tap(find.text('Супы').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.add_shopping_cart_outlined).first);
+      await tester.pump();
+      expect(
+        find.text('Сливочный суп — ${l10n.addToCart}'),
+        findsOneWidget,
+      );
 
-    verify(
-      apiService.get<Map<String, dynamic>>(
-        '/venues',
-        queryParameters: anyNamed('queryParameters'),
-      ),
-    ).called(greaterThanOrEqualTo(1));
-    verify(
-      apiService.get<Map<String, dynamic>>('/venues/venue-1'),
-    ).called(1);
+      verify(
+        apiService.get<Map<String, dynamic>>(
+          '/venues',
+          queryParameters: anyNamed('queryParameters'),
+        ),
+      ).called(greaterThanOrEqualTo(1));
+      verify(
+        apiService.get<Map<String, dynamic>>('/venues/venue-1'),
+      ).called(1);
+      verify(
+        apiService.get<dynamic>(
+          '/products',
+          queryParameters: anyNamed('queryParameters'),
+        ),
+      ).called(1);
   });
 }
