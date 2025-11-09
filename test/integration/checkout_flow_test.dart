@@ -133,15 +133,19 @@ void main() {
     await container.read(cartNotifierProvider.stream).first;
 
     final notifier = container.read(checkoutProvider.notifier);
-    final failure =
-        await notifier.placeOrder(etaLabel: '25-35 мин');
+    final failure = await notifier.placeOrder(
+      etaLabel: '25-35 мин',
+      paymentIntentId: 'pi_test_123',
+      paymentMethodId: 'pm_card_123',
+    );
 
     expect(failure, isNull);
     expect(cartUpdateSpy.clearCalled, isTrue);
 
     final state = container.read(checkoutProvider);
     expect(state.isPlacing, isFalse);
-    expect(state.order.paymentMethod, equals('pending'));
+    expect(state.order.paymentMethod, equals('card'));
+    expect(state.order.paymentIntentId, equals('pi_test_123'));
 
     final captured = verify(
       apiService.post<Map<String, dynamic>>(
@@ -150,7 +154,9 @@ void main() {
       ),
     ).captured.single as Map<String, dynamic>;
 
-    expect(captured['paymentMethod'], equals('pending'));
+    expect(captured['paymentMethod'], equals('card'));
+    expect(captured['paymentMethodId'], equals('pm_card_123'));
+    expect(captured['paymentIntentId'], equals('pi_test_123'));
     expect(captured['items'], isA<List>());
     expect((captured['items'] as List).length, equals(1));
     expect(captured['address'], isA<Map<String, dynamic>>());

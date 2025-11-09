@@ -217,13 +217,21 @@ class S {
   String get placeOrder => _t('placeOrder');
   String get etaLabel => _t('etaLabel');
   String get acceptTermsError => _t('acceptTermsError');
-  String get cashPayment => _t('cashPayment');
-  String get cardPayment => _t('cardPayment');
-  String get paymentMethod => _t('paymentMethod');
-  String get savedCards => _t('savedCards');
-  String get addNewCard => _t('addNewCard');
-  String get saveCard => _t('saveCard');
-  String get payNow => _t('payNow');
+    String get cashPayment => _t('cashPayment');
+    String get cardPayment => _t('cardPayment');
+    String get paymentMethod => _t('paymentMethod');
+    String get savedCards => _t('savedCards');
+    String get addNewCard => _t('addNewCard');
+    String get saveCard => _t('saveCard');
+    String get paymentSectionTitle => _t('paymentSectionTitle');
+    String get newCardLabel => _t('newCardLabel');
+    String get saveCardLabel => _t('saveCardLabel');
+    String get currencyRub => _t('currencyRub');
+    String payNow(String amount) =>
+        _t('payNow').replaceAll('{amount}', amount);
+    String get acceptTermsBeforePaying => _t('acceptTermsBeforePaying');
+    String get checkoutIncomplete => _t('checkoutIncomplete');
+    String get selectPaymentMethod => _t('selectPaymentMethod');
   String get cashInstructions => _t('cashInstructions');
   String get cashFeeApplied => _t('cashFeeApplied');
   String get orderPlaced => _t('orderPlaced');
@@ -410,7 +418,14 @@ const Map<String, String> _ruValues = <String, String>{
   'savedCards': 'Сохранённые карты',
   'addNewCard': 'Добавить новую карту',
   'saveCard': 'Сохранить карту',
-  'payNow': 'Оплатить',
+  'paymentSectionTitle': 'Способ оплаты',
+  'newCardLabel': 'Новая карта',
+  'saveCardLabel': 'Сохранить карту для будущих заказов',
+  'currencyRub': 'руб.',
+  'payNow': 'Оплатить {amount}',
+  'acceptTermsBeforePaying': 'Сначала подтвердите согласие с условиями.',
+  'checkoutIncomplete': 'Проверьте адрес и содержимое заказа.',
+  'selectPaymentMethod': 'Выберите способ оплаты.',
   'cashInstructions': 'Инструкции для оплаты наличными',
   'cashFeeApplied': 'Дополнительная комиссия за наличные',
   'orderPlaced': 'Заказ оформлен',
@@ -579,7 +594,14 @@ const Map<String, String> _enValues = <String, String>{
   'savedCards': 'Saved cards',
   'addNewCard': 'Add new card',
   'saveCard': 'Save card',
-  'payNow': 'Pay now',
+  'paymentSectionTitle': 'Payment',
+  'newCardLabel': 'New card',
+  'saveCardLabel': 'Save card for future orders',
+  'currencyRub': 'RUB',
+  'payNow': 'Pay {amount}',
+  'acceptTermsBeforePaying': 'Please accept the terms before paying.',
+  'checkoutIncomplete': 'Check your address and order details before paying.',
+  'selectPaymentMethod': 'Select a payment method.',
   'cashInstructions': 'Instructions for cash payment',
   'cashFeeApplied': 'Additional cash handling fee',
   'orderPlaced': 'Order placed',

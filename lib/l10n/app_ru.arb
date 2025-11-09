@@ -136,10 +136,22 @@
   "cashPayment": "Наличные",
   "cardPayment": "Банковская карта",
   "paymentMethod": "Способ оплаты",
-  "savedCards": "Сохранённые карты",
-  "addNewCard": "Добавить новую карту",
-  "saveCard": "Сохранить карту",
-  "payNow": "Оплатить",
+    "savedCards": "Сохранённые карты",
+    "addNewCard": "Добавить новую карту",
+    "saveCard": "Сохранить карту",
+    "paymentSectionTitle": "Способ оплаты",
+    "newCardLabel": "Новая карта",
+    "saveCardLabel": "Сохранить карту для будущих заказов",
+    "currencyRub": "руб.",
+    "payNow": "Оплатить {amount}",
+    "@payNow": {
+      "placeholders": {
+        "amount": {}
+      }
+    },
+    "acceptTermsBeforePaying": "Сначала подтвердите согласие с условиями.",
+    "checkoutIncomplete": "Проверьте адрес и содержимое заказа.",
+    "selectPaymentMethod": "Выберите способ оплаты.",
   "cashInstructions": "Инструкции для оплаты наличными",
   "cashFeeApplied": "Дополнительная комиссия за наличные",
   "orderPlaced": "Заказ оформлен",

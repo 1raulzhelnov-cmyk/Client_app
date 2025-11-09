@@ -103,7 +103,11 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
     );
   }
 
-  Future<Failure?> placeOrder({String? etaLabel}) async {
+  Future<Failure?> placeOrder({
+    String? etaLabel,
+    required String paymentIntentId,
+    required String paymentMethodId,
+  }) async {
     final currentState = state;
     if (!currentState.hasItems) {
       const failure = Failure(message: 'Корзина пуста. Добавьте товары.');
@@ -115,17 +119,27 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
       state = currentState.copyWith(error: failure);
       return failure;
     }
+    if (paymentIntentId.trim().isEmpty || paymentMethodId.trim().isEmpty) {
+      const failure = Failure(message: 'Не удалось подтвердить оплату.');
+      state = currentState.copyWith(error: failure);
+      return failure;
+    }
 
     state = currentState.copyWith(isPlacing: true, clearError: true);
 
     final resolvedEtaLabel = etaLabel ?? currentState.etaLabel;
     final etaDate = _etaDateFromLabel(resolvedEtaLabel);
     final order = currentState.order.copyWith(
-      paymentMethod: 'pending',
+      paymentMethod: 'card',
+      paymentIntentId: paymentIntentId,
       eta: etaDate,
     );
 
-    final payload = _buildPayload(order, resolvedEtaLabel);
+    final payload = _buildPayload(
+      order,
+      resolvedEtaLabel,
+      paymentMethodId: paymentMethodId,
+    );
     final apiService = ref.read(apiServiceProvider);
 
     try {
@@ -143,7 +157,10 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
           return failure;
         },
         (response) async {
-          final updatedOrder = _parseOrder(response, fallback: order);
+          final updatedOrder = _parseOrder(response, fallback: order).copyWith(
+            paymentMethod: 'card',
+            paymentIntentId: paymentIntentId,
+          );
           state = state.copyWith(
             order: updatedOrder,
             isPlacing: false,
@@ -280,8 +297,9 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
 
   Map<String, dynamic> _buildPayload(
     OrderModel order,
-    String? etaLabel,
-  ) {
+    String? etaLabel, {
+    required String paymentMethodId,
+  }) {
     final etaString = etaLabel;
     final payload = <String, dynamic>{
       'userId': order.userId,
@@ -290,7 +308,9 @@ class CheckoutNotifier extends AutoDisposeNotifier<CheckoutState> {
       'total': order.total,
       'deliveryFee': order.deliveryFee,
       'cashFee': order.cashFee,
-      'paymentMethod': 'pending',
+      'paymentMethod': order.paymentMethod,
+      'paymentMethodId': paymentMethodId,
+      'paymentIntentId': order.paymentIntentId,
       'eta': etaString,
       'etaApprox': order.eta?.toIso8601String(),
       'notes': order.notes,

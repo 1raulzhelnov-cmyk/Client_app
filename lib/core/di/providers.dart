@@ -12,6 +12,7 @@ import '../../services/api/api_service.dart';
 import '../../services/auth/auth_service.dart';
 import '../../services/firestore/firestore_service.dart';
 import '../../services/maps/maps_service.dart';
+import '../../services/stripe/stripe_service.dart';
 import '../config/env.dart';
 
 class AppState {
@@ -69,6 +70,11 @@ final googlePlaceProvider = Provider<GooglePlace>((ref) {
 final mapsServiceProvider = Provider<MapsService>((ref) {
   final googlePlace = ref.watch(googlePlaceProvider);
   return MapsService(googlePlace: googlePlace);
+});
+
+final stripeServiceProvider = Provider<StripeService>((ref) {
+  final apiService = ref.watch(apiServiceProvider);
+  return StripeService(apiService: apiService);
 });
 
 final appleSignInProvider = Provider<AppleSignInFacade>((ref) {

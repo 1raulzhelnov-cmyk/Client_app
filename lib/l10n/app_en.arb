@@ -136,10 +136,22 @@
   "cashPayment": "Cash",
   "cardPayment": "Card",
   "paymentMethod": "Payment method",
-  "savedCards": "Saved cards",
-  "addNewCard": "Add new card",
-  "saveCard": "Save card",
-  "payNow": "Pay now",
+    "savedCards": "Saved cards",
+    "addNewCard": "Add new card",
+    "saveCard": "Save card",
+    "paymentSectionTitle": "Payment",
+    "newCardLabel": "New card",
+    "saveCardLabel": "Save card for future orders",
+    "currencyRub": "RUB",
+    "payNow": "Pay {amount}",
+    "@payNow": {
+      "placeholders": {
+        "amount": {}
+      }
+    },
+    "acceptTermsBeforePaying": "Please accept the terms before paying.",
+    "checkoutIncomplete": "Check your address and order details before paying.",
+    "selectPaymentMethod": "Select a payment method.",
   "cashInstructions": "Instructions for cash payment",
   "cashFeeApplied": "Additional cash handling fee",
   "orderPlaced": "Order placed",
