@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/errors/failure.dart';
 import '../../../models/venue_model.dart';
+import 'filter_notifier.dart';
 
 enum VenueSort { ratingDesc, priceAsc }
 
@@ -163,7 +164,10 @@ final venueFiltersNotifierProvider =
 
 final venueFilterProvider = Provider<Map<String, String>>((ref) {
   final filters = ref.watch(venueFiltersNotifierProvider);
-  return filters.toQueryParameters();
+  final modalFilters = ref.watch(filterProvider);
+  final params = filters.toQueryParameters();
+  params.addAll(_modalFiltersToQuery(modalFilters));
+  return params;
 });
 
 final venueNotifierProvider =
@@ -343,4 +347,53 @@ class VenueNotifier extends AutoDisposeAsyncNotifier<List<VenueModel>> {
     final serialized = entries.map((e) => '${e.key}=${e.value}').join('&');
     return 'venues_cache_$serialized';
   }
+}
+
+Map<String, String> _modalFiltersToQuery(FilterState filters) {
+  if (filters.isEmpty) {
+    return const {};
+  }
+  final result = <String, String>{};
+
+  void putIfPresent(String key, dynamic value, String Function(dynamic) mapper) {
+    if (value == null) {
+      return;
+    }
+    result[key] = mapper(value);
+  }
+
+  if (filters.containsKey('query')) {
+    final value = filters['query']?.toString().trim();
+    if (value != null && value.isNotEmpty) {
+      result['search'] = value;
+    }
+  }
+
+  putIfPresent('cuisines', filters['cuisines'], (value) => value.toString());
+  putIfPresent('minPrice', filters['minPrice'], (value) {
+    if (value is num) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
+  });
+  putIfPresent('maxPrice', filters['maxPrice'], (value) {
+    if (value is num) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
+  });
+  putIfPresent('minRating', filters['minRating'], (value) {
+    if (value is num) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toString();
+  });
+  putIfPresent('maxDistance', filters['maxDistance'], (value) {
+    if (value is num) {
+      return value.toStringAsFixed(1);
+    }
+    return value.toString();
+  });
+
+  return result;
 }
