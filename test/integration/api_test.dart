@@ -20,11 +20,13 @@ void main() {
     late MockFirebaseAuth auth;
     late MockUser user;
     late ApiService service;
+    late Uri testUri;
 
     setUp(() {
       client = MockHttpClient();
       auth = MockFirebaseAuth();
       user = MockUser();
+      testUri = Uri.parse('https://api.example.com/test');
       service = ApiService(
         client: client,
         firebaseAuth: auth,
@@ -37,7 +39,7 @@ void main() {
       when(user.getIdToken()).thenAnswer((_) async => 'token');
       when(
         client.get(
-          Uri.parse('https://api.example.com/test'),
+          testUri,
           headers: anyNamed('headers'),
         ),
       ).thenAnswer(
@@ -51,6 +53,77 @@ void main() {
 
       expect(result, isA<Right<Failure, String>>());
       expect(result.getOrElse(() => ''), 'ok');
+    });
+
+    test('повторяет запрос после 401 и успешного обновления токена', () async {
+      when(auth.currentUser).thenReturn(user);
+      when(user.getIdToken()).thenAnswer((_) async => 'initial-token');
+      when(user.getIdToken(true)).thenAnswer((_) async => 'refreshed-token');
+
+      var attempts = 0;
+      when(
+        client.get(
+          testUri,
+          headers: anyNamed('headers'),
+        ),
+      ).thenAnswer((_) async {
+        attempts += 1;
+        if (attempts == 1) {
+          return http.Response('Unauthorized', 401);
+        }
+        return http.Response('{"data":"ok"}', 200);
+      });
+
+      final result = await service.get<String>(
+        '/test',
+        decoder: (dynamic data) => data['data'] as String,
+      );
+
+      expect(result.getOrElse(() => ''), 'ok');
+      expect(attempts, equals(2));
+      verify(user.getIdToken(true)).called(1);
+    });
+
+    test('возвращает ServerFailure при ошибке 500', () async {
+      when(auth.currentUser).thenReturn(user);
+      when(user.getIdToken()).thenAnswer((_) async => 'token');
+      when(
+        client.get(
+          testUri,
+          headers: anyNamed('headers'),
+        ),
+      ).thenAnswer(
+        (_) async => http.Response('{"message":"server"}', 500),
+      );
+
+      final result = await service.get<dynamic>('/test');
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.swap().getOrElse(() => Failure(message: '')),
+        isA<ServerFailure>()
+            .having((failure) => failure.message, 'message', contains('server')),
+      );
+    });
+
+    test('возвращает NetworkFailure когда клиент выбрасывает исключение',
+        () async {
+      when(auth.currentUser).thenReturn(user);
+      when(user.getIdToken()).thenAnswer((_) async => 'token');
+      when(
+        client.get(
+          testUri,
+          headers: anyNamed('headers'),
+        ),
+      ).thenThrow(Exception('socket error'));
+
+      final result = await service.get<dynamic>('/test');
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.swap().getOrElse(() => Failure(message: '')),
+        isA<NetworkFailure>(),
+      );
     });
   });
 }

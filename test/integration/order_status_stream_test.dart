@@ -72,7 +72,9 @@ void main() {
     });
 
     tearDown(() async {
-      await controller.close();
+      if (!controller.isClosed) {
+        await controller.close();
+      }
       container.dispose();
     });
 
@@ -83,12 +85,13 @@ void main() {
       );
       final updatedOrder = initialOrder.copyWith(status: OrderStatus.transit);
 
-      final stream = container.read(orderStatusProvider(orderId).stream);
+      final stream = _watchOrderStatus(container, orderId);
 
       scheduleMicrotask(() {
         controller
           ..add(initialOrder)
-          ..add(updatedOrder);
+          ..add(updatedOrder)
+          ..close();
       });
 
       await expectLater(
@@ -97,26 +100,47 @@ void main() {
       );
     });
 
-      test('поддерживает переход заказа в статус отмены', () async {
-        final initialOrder = buildOrder(
-          id: orderId,
-          status: OrderStatus.confirmed,
-        );
-        final cancelledOrder =
-            initialOrder.copyWith(status: OrderStatus.cancelled);
+    test('поддерживает переход заказа в статус отмены', () async {
+      final initialOrder = buildOrder(
+        id: orderId,
+        status: OrderStatus.confirmed,
+      );
+      final cancelledOrder =
+          initialOrder.copyWith(status: OrderStatus.cancelled);
 
-        final stream = container.read(orderStatusProvider(orderId).stream);
+      final stream = _watchOrderStatus(container, orderId);
 
-        scheduleMicrotask(() {
-          controller
-            ..add(initialOrder)
-            ..add(cancelledOrder);
-        });
-
-        await expectLater(
-          stream,
-          emitsInOrder([initialOrder, cancelledOrder]),
-        );
+      scheduleMicrotask(() {
+        controller
+          ..add(initialOrder)
+          ..add(cancelledOrder)
+          ..close();
       });
+
+      await expectLater(
+        stream,
+        emitsInOrder([initialOrder, cancelledOrder]),
+      );
+    });
   });
+}
+
+Stream<OrderModel> _watchOrderStatus(
+  ProviderContainer container,
+  String orderId,
+) {
+  final controller = StreamController<OrderModel>();
+  final subscription = container.listen<AsyncValue<OrderModel>>(
+    orderStatusProvider(orderId),
+    (previous, next) {
+      next.when(
+        data: controller.add,
+        error: controller.addError,
+        loading: () {},
+      );
+    },
+    fireImmediately: true,
+  );
+  controller.onCancel = subscription.close;
+  return controller.stream;
 }

@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:eazy_client_mvp/core/di/providers.dart';
+import 'package:eazy_client_mvp/core/errors/failure.dart';
 import 'package:eazy_client_mvp/features/address/providers/address_notifier.dart';
 import 'package:eazy_client_mvp/models/address_model.dart';
 import 'package:eazy_client_mvp/services/api/api_service.dart';
@@ -26,7 +27,7 @@ void main() {
       addTearDown(container.dispose);
     });
 
-    test('fetchAddresses populates state on success', () async {
+      test('fetchAddresses populates state on success', () async {
       final addressesJson = [
         {
           'id': 'addr-1',
@@ -64,5 +65,81 @@ void main() {
               decoder: anyNamed('decoder')))
           .called(1);
     });
+
+      test('fetchAddresses clears state on failure', () async {
+        final failure = Failure(message: 'Network error');
+        when(
+          apiService.get<List<AddressModel>>(
+            any,
+            queryParameters: anyNamed('queryParameters'),
+            decoder: anyNamed('decoder'),
+          ),
+        ).thenAnswer((_) async => left(failure));
+
+        final notifier = container.read(addressNotifierProvider.notifier);
+        final result = await notifier.fetchAddresses();
+
+        expect(result, failure);
+        expect(container.read(addressNotifierProvider), isEmpty);
+      });
+
+      test('add/update/delete address mutate state', () async {
+        final address = AddressModel(
+          id: 'addr-1',
+          formatted: 'Адрес 1',
+          lat: 55.0,
+          lng: 37.0,
+        );
+
+        when(
+          apiService.post<AddressModel>(
+            any,
+            body: anyNamed('body'),
+            decoder: anyNamed('decoder'),
+          ),
+        ).thenAnswer((invocation) async => right(address));
+
+        when(
+          apiService.put<AddressModel>(
+            any,
+            body: anyNamed('body'),
+            decoder: anyNamed('decoder'),
+          ),
+        ).thenAnswer((_) async => right(address.copyWith(instructions: 'Новая')));
+
+        when(
+          apiService.delete<dynamic>(
+            any,
+          ),
+        ).thenAnswer((_) async => right(null));
+
+        final notifier = container.read(addressNotifierProvider.notifier);
+        expect(await notifier.addAddress(address), isNull);
+        expect(container.read(addressNotifierProvider), hasLength(1));
+
+        final updated = address.copyWith(instructions: 'Новая');
+        expect(await notifier.updateAddress(updated), isNull);
+        expect(container.read(addressNotifierProvider).first.instructions, 'Новая');
+
+        expect(await notifier.deleteAddress(address.id!), isNull);
+        expect(container.read(addressNotifierProvider), isEmpty);
+      });
+
+      test('updateAddress returns failure when id missing', () async {
+        final notifier = container.read(addressNotifierProvider.notifier);
+        final failure = await notifier.updateAddress(
+          const AddressModel(
+            formatted: 'Без id',
+            lat: 55,
+            lng: 37,
+          ),
+        );
+
+        expect(failure, isA<Failure>());
+        expect(
+          failure?.message,
+          contains('identifier'),
+        );
+      });
   });
 }

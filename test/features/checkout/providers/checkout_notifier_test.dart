@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:eazy_client_mvp/core/constants/app_constants.dart';
 import 'package:eazy_client_mvp/core/di/providers.dart';
+import 'package:eazy_client_mvp/core/errors/failure.dart';
 import 'package:eazy_client_mvp/features/checkout/providers/checkout_notifier.dart';
 import 'package:eazy_client_mvp/features/profile/providers/profile_notifier.dart';
 import 'package:eazy_client_mvp/models/address_model.dart';
@@ -107,8 +108,8 @@ void main() {
       expect(state.hasSelectedAddress, isTrue);
     });
 
-    test('setPaymentMethod cash пересчитывает комиссию', () async {
-      await container.read(cartNotifierProvider.stream).first;
+      test('setPaymentMethod cash пересчитывает комиссию', () async {
+        await container.read(cartNotifierProvider.future);
 
       final notifier = container.read(checkoutProvider.notifier);
       notifier.setPaymentMethod('cash');
@@ -118,6 +119,24 @@ void main() {
       expect(state.order.paymentMethod, equals('cash'));
       expect(state.order.cashFee, closeTo(expectedFee, 0.0001));
     });
+
+      test('placeOrder требует инструкции для оплаты наличными', () async {
+        await container.read(cartNotifierProvider.future);
+        final notifier = container.read(checkoutProvider.notifier);
+
+        notifier.setPaymentMethod('cash');
+        notifier.updateCashInstructions('   ');
+
+        final failure = await notifier.placeOrder();
+
+        expect(failure, isA<Failure>());
+        expect(
+          failure?.message,
+          contains('инструкцию для оплаты наличными'),
+        );
+        final state = container.read(checkoutProvider);
+        expect(state.isPlacing, isFalse);
+      });
   });
 }
 

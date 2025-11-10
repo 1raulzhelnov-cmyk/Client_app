@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_place/google_place.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,14 +61,13 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
   );
 });
 
-final googlePlaceProvider = Provider<GooglePlace>((ref) {
-  final apiKey = ref.watch(envConfigProvider).googleMapsApiKey;
-  return GooglePlace(apiKey);
-});
-
 final mapsServiceProvider = Provider<MapsService>((ref) {
-  final googlePlace = ref.watch(googlePlaceProvider);
-  return MapsService(googlePlace: googlePlace);
+  final apiKey = ref.watch(envConfigProvider).googleMapsApiKey;
+  final client = ref.watch(httpClientProvider);
+  return MapsService(
+    apiKey: apiKey,
+    httpClient: client,
+  );
 });
 
 final stripeServiceProvider = Provider<StripeService>((ref) {

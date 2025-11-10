@@ -31,6 +31,17 @@ class _StubAddressNotifier extends AddressNotifier {
   }
 }
 
+class _FailingAddressNotifier extends AddressNotifier {
+  @override
+  List<AddressModel> build() => const [];
+
+  @override
+  Future<Failure?> fetchAddresses() async {
+    state = const [];
+    return const Failure(message: 'Ошибка загрузки адресов');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -75,6 +86,62 @@ void main() {
 
       expect(notifier.lastDeletedId, equals(address.id));
       expect(find.text(l10n.addressDeleted), findsOneWidget);
+    });
+
+    testWidgets('показывает пустой стейт при отсутствии адресов', (tester) async {
+      final l10n = await S.load(const Locale('ru'));
+      final notifier = _StubAddressNotifier(const []);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            addressNotifierProvider.overrideWith(() => notifier),
+          ],
+          child: MaterialApp(
+            locale: const Locale('ru'),
+            supportedLocales: S.supportedLocales,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const AddressListScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.addressListEmpty), findsOneWidget);
+    });
+
+    testWidgets('отображает snackbar при ошибке загрузки', (tester) async {
+      final l10n = await S.load(const Locale('ru'));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            addressNotifierProvider.overrideWith(_FailingAddressNotifier.new),
+          ],
+          child: MaterialApp(
+            locale: const Locale('ru'),
+            supportedLocales: S.supportedLocales,
+            localizationsDelegates: const [
+              S.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            home: const AddressListScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ошибка загрузки адресов'), findsOneWidget);
+      expect(find.text(l10n.addressListEmpty), findsOneWidget);
     });
   });
 }

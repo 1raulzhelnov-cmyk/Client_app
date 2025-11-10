@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -11,6 +12,8 @@ class MockStripe extends Mock implements Stripe {}
 class MockApiService extends Mock implements ApiService {}
 
 class MockPaymentMethod extends Mock implements PaymentMethod {}
+
+class MockPaymentIntent extends Mock implements PaymentIntent {}
 
 class MockCardFormEditController extends Mock
     implements CardFormEditController {}
@@ -68,5 +71,32 @@ void main() {
         ).called(1);
       },
     );
+
+    test('createIntent бросает Failure при пустом ответе API', () async {
+      when(
+        apiService.post<Map<String, dynamic>>(
+          any,
+          body: anyNamed('body'),
+        ),
+      ).thenAnswer((_) async => right(<String, dynamic>{}));
+
+      expect(
+        () => service.createIntent(amount: 10),
+        throwsA(isA<Failure>()),
+      );
+    });
+
+    test('confirmPayment требует clientSecret', () async {
+      final intent = MockPaymentIntent();
+      when(intent.clientSecret).thenReturn(null);
+      when(intent.id).thenReturn('pi_123');
+      final method = MockPaymentMethod();
+      when(method.id).thenReturn('pm_123');
+
+      expect(
+        () => service.confirmPayment(intent: intent, method: method),
+        throwsA(isA<Failure>()),
+      );
+    });
   });
 }

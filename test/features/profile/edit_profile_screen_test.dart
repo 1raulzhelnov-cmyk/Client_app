@@ -35,7 +35,9 @@ class _StubProfileNotifier extends ProfileNotifier {
   _StubProfileNotifier(this.initialUser);
 
   final UserModel initialUser;
-  bool uploadPhotoCalled = false;
+    bool uploadPhotoCalled = false;
+    bool deleteAccountCalled = false;
+    Map<String, dynamic>? lastUpdatedData;
 
   @override
   Future<UserModel> build() async => initialUser;
@@ -51,6 +53,7 @@ class _StubProfileNotifier extends ProfileNotifier {
 
   @override
   Future<void> updateProfile(Map<String, dynamic> data) async {
+      lastUpdatedData = data;
     state = AsyncData(
       initialUser.copyWith(
         name: data['name'] as String? ?? initialUser.name,
@@ -61,7 +64,9 @@ class _StubProfileNotifier extends ProfileNotifier {
   }
 
   @override
-  Future<void> deleteAccount() async {}
+    Future<void> deleteAccount() async {
+      deleteAccountCalled = true;
+    }
 }
 
 void main() {
@@ -122,5 +127,97 @@ void main() {
       expect(imagePicker.lastSource, ImageSource.gallery);
       expect(notifier.uploadPhotoCalled, isTrue);
     });
+
+      testWidgets('submits updated profile values', (tester) async {
+        final l10n = await S.load(const Locale('ru'));
+        final user = const UserModel(
+          id: 'uid-123',
+          name: 'Tester',
+          email: 'test@example.com',
+          phone: '+79001112233',
+        );
+        final notifier = _StubProfileNotifier(user);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              profileNotifierProvider.overrideWith(() => notifier),
+              imagePickerProvider.overrideWithValue(ImagePicker()),
+            ],
+            child: MaterialApp(
+              locale: const Locale('ru'),
+              supportedLocales: S.supportedLocales,
+              localizationsDelegates: const [
+                S.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              home: const EditProfileScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.bySemanticsLabel(l10n.fullNameField),
+          '  Новое имя  ',
+        );
+        await tester.enterText(
+          find.bySemanticsLabel(l10n.phoneField),
+          '+79991234567',
+        );
+
+        await tester.tap(find.text(l10n.saveChanges));
+        await tester.pumpAndSettle();
+
+        expect(notifier.lastUpdatedData?['name'], 'Новое имя');
+        expect(notifier.lastUpdatedData?['phone'], '+79991234567');
+        expect(
+          notifier.state.value?.name,
+          'Новое имя',
+        );
+      });
+
+      testWidgets('delete account confirmation triggers notifier', (tester) async {
+        final l10n = await S.load(const Locale('ru'));
+        final user = const UserModel(
+          id: 'uid-123',
+          name: 'Tester',
+          email: 'test@example.com',
+        );
+        final notifier = _StubProfileNotifier(user);
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              profileNotifierProvider.overrideWith(() => notifier),
+              imagePickerProvider.overrideWithValue(ImagePicker()),
+            ],
+            child: MaterialApp(
+              locale: const Locale('ru'),
+              supportedLocales: S.supportedLocales,
+              localizationsDelegates: const [
+                S.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              home: const EditProfileScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text(l10n.deleteAccount));
+        await tester.pumpAndSettle();
+
+        expect(find.text(l10n.confirmDeletionTitle), findsOneWidget);
+
+        await tester.tap(find.text(l10n.delete));
+        await tester.pumpAndSettle();
+
+        expect(notifier.deleteAccountCalled, isTrue);
+      });
   });
 }
