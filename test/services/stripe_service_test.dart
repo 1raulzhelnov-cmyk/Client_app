@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
@@ -11,6 +12,8 @@ class MockStripe extends Mock implements Stripe {}
 class MockApiService extends Mock implements ApiService {}
 
 class MockPaymentMethod extends Mock implements PaymentMethod {}
+
+class MockPaymentIntent extends Mock implements PaymentIntent {}
 
 class MockCardFormEditController extends Mock
     implements CardFormEditController {}
@@ -84,15 +87,9 @@ void main() {
     });
 
     test('confirmPayment требует clientSecret', () async {
-      final intent = PaymentIntent(
-        id: 'pi_123',
-        clientSecret: null,
-        amount: 1000,
-        created: 0,
-        currency: 'rub',
-        livemode: false,
-        status: PaymentIntentsStatus.RequiresPaymentMethod,
-      );
+      final intent = MockPaymentIntent();
+      when(intent.clientSecret).thenReturn(null);
+      when(intent.id).thenReturn('pi_123');
       final method = MockPaymentMethod();
       when(method.id).thenReturn('pm_123');
 

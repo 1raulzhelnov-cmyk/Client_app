@@ -131,7 +131,7 @@ void main() {
 
     addTearDown(container.dispose);
 
-    await container.read(cartNotifierProvider.stream).first;
+      await container.read(cartNotifierProvider.future);
 
     final notifier = container.read(checkoutProvider.notifier);
     final failure = await notifier.placeOrder(
@@ -252,7 +252,7 @@ void main() {
 
     addTearDown(container.dispose);
 
-    await container.read(cartNotifierProvider.stream).first;
+    await container.read(cartNotifierProvider.future);
 
     final notifier = container.read(checkoutProvider.notifier);
     notifier.setPaymentMethod('cash');

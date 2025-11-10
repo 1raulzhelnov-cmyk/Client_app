@@ -109,7 +109,7 @@ void main() {
     });
 
       test('setPaymentMethod cash пересчитывает комиссию', () async {
-      await container.read(cartNotifierProvider.stream).first;
+        await container.read(cartNotifierProvider.future);
 
       final notifier = container.read(checkoutProvider.notifier);
       notifier.setPaymentMethod('cash');
@@ -121,7 +121,7 @@ void main() {
     });
 
       test('placeOrder требует инструкции для оплаты наличными', () async {
-        await container.read(cartNotifierProvider.stream).first;
+        await container.read(cartNotifierProvider.future);
         final notifier = container.read(checkoutProvider.notifier);
 
         notifier.setPaymentMethod('cash');

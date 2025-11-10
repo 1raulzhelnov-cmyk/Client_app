@@ -44,7 +44,9 @@ void main() {
     });
 
     tearDown(() async {
-      await controller.close();
+      if (!controller.isClosed) {
+        await controller.close();
+      }
       container.dispose();
     });
 
@@ -71,11 +73,13 @@ void main() {
       );
       final updatedItem = initialItem.copyWith(quantity: 3);
 
-      final stream = container.read(cartNotifierProvider.stream);
+      final stream = _watchCartProvider(container);
 
       scheduleMicrotask(() {
-        controller.add(<CartItemModel>[initialItem]);
-        controller.add(<CartItemModel>[updatedItem]);
+        controller
+          ..add(<CartItemModel>[initialItem])
+          ..add(<CartItemModel>[updatedItem]);
+        controller.close();
       });
 
       await expectLater(
@@ -87,4 +91,21 @@ void main() {
       );
     });
   });
+}
+
+Stream<List<CartItemModel>> _watchCartProvider(ProviderContainer container) {
+  final controller = StreamController<List<CartItemModel>>();
+  final subscription = container.listen<AsyncValue<List<CartItemModel>>>(
+    cartNotifierProvider,
+    (previous, next) {
+      next.when(
+        data: controller.add,
+        error: controller.addError,
+        loading: () {},
+      );
+    },
+    fireImmediately: true,
+  );
+  controller.onCancel = subscription.close;
+  return controller.stream;
 }
